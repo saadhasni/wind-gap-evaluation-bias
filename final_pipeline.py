@@ -1,33 +1,3 @@
-"""
-=============================================================================
-  FINAL PIPELINE — Leak-Free Wind-Speed Forecasting Across Three Datasets
-  final_pipeline.py                                              (v3, audited)
-=============================================================================
-  Datasets (via dataset_adapters.py):
-    1. ZephIR 300 offshore lidar   — CSV,   1-min grid,  6 days
-    2. WFIP3 DOE Buoy 130 lidar    — netCDF, 10-min grid, ~5 months (gappy)
-    3. Onshore turbine (Zenodo)    — CSV,   10-min grid, 1 year (very gappy)
-
-  Guarantees (each independently audited):
-    G1  Every feature is strictly causal (built-in assert: features at t are
-        bit-identical when all data after t is deleted).
-    G2  Rolling / lag / diff / Kalman features are computed WITHIN contiguous
-        segments only — nothing ever blends across a time gap.
-    G3  No input window and no forecast target ever spans a gap.
-    G4  Chronological split with an EMBARGO of (SEQ_LEN + H) valid rows
-        between train and test, so no training target can appear inside any
-        test input window.
-    G5  All models are scored on the identical test rows.
-    G6  The RNN scaler is fit on pre-test data only.
-    G7  Statistical support: Diebold–Mariano test (Newey–West variance) and
-        circular block-bootstrap 95% CIs on every RMSE.
-
-  Models: Persistence | ARIMA(2,0,1) | XGBoost | LSTM | GRU
-  Outputs: results table (CSV), per-dataset console report, 2 figures.
-=============================================================================
-  HOW TO RUN — see README section at the bottom of this file.
-=============================================================================
-"""
 import warnings, os, sys, glob, json
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -49,7 +19,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, GRU, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 
-# ── CONFIG ─────────────────────────────────────────────────────────────
+# CONFIG 
 SEED          = 42
 TRAIN_RATIO   = 0.75
 ARIMA_ORIGINS = 120          # strided ARIMA refit origins per horizon
@@ -61,7 +31,7 @@ np.random.seed(SEED); tf.random.set_seed(SEED)
 
 MODEL_NAMES = ['Persistence', 'ARIMA', 'XGBoost', 'LSTM', 'GRU']
 
-# ── SMALL UTILITIES ────────────────────────────────────────────────────
+#  SMALL UTILITIES
 def rmse_mae(a, b):
     return (float(np.sqrt(mean_squared_error(a, b))),
             float(mean_absolute_error(a, b)))
@@ -97,7 +67,7 @@ def block_bootstrap_rmse_ci(err, n_boot=BOOT_N, block=BOOT_BLOCK, seed=SEED):
         stats_[b] = np.sqrt(np.mean(err[idx[:T]]**2))
     return float(np.percentile(stats_, 2.5)), float(np.percentile(stats_, 97.5))
 
-# ── GAP-AWARE CORE (audited) ───────────────────────────────────────────
+# GAP-AWARE CORE (audited)
 def segment_ids(index, step):
     d = index.to_series().diff()
     breaks = (d != step).to_numpy(copy=True)
@@ -149,7 +119,7 @@ def build_rnn(cell, seq_len):
     m.compile(optimizer='adam', loss='mse')
     return m
 
-# ── PER-DATASET EXPERIMENT ─────────────────────────────────────────────
+# PER-DATASET EXPERIMENT 
 def run_dataset(name, series, step, horizons, seq_len, all_rows_out):
     print(f"\n{'='*72}\n  DATASET: {name}"
           f"\n  seq_len={seq_len} steps ({seq_len*step}) | horizons={horizons}"
@@ -287,7 +257,7 @@ def run_dataset(name, series, step, horizons, seq_len, all_rows_out):
                     n_test=len(te_rows)))
 
 
-# ── MAIN ───────────────────────────────────────────────────────────────
+#  MAIN 
 if __name__ == '__main__':
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from dataset_adapters import load_zephir, load_wfip3_buoy
@@ -325,7 +295,7 @@ if __name__ == '__main__':
     except (IndexError, FileNotFoundError):
         print("\n[skip] onshore/*10min*.csv not found")
 
-    # ---- results table + figures ----
+    #  results table + figures
     if all_rows:
         res_df = pd.DataFrame(all_rows)
         res_df.to_csv('final_results.csv', index=False)
@@ -363,23 +333,3 @@ if __name__ == '__main__':
         print("Saved final_fig_skill.png, final_fig_rmse.png")
 
     print("\nAll done.")
-
-# =============================================================================
-#  README — HOW TO RUN
-# =============================================================================
-#  Folder layout (everything next to this script):
-#      final_pipeline.py
-#      dataset_adapters.py
-#      ZephIR_windlidar_*.CSV            (the 6 ZephIR files)
-#      buoy_data/                        (the WFIP3 .nc files)
-#      onshore/Wind Time Series Dataset(10min).csv
-#
-#  1) python -m venv venv
-#     venv\Scripts\activate                       (Windows)
-#  2) pip install "numpy<2.0.0,>=1.26.0" pandas scipy matplotlib xarray \
-#         netCDF4 xgboost statsmodels scikit-learn tensorflow==2.17.0
-#  3) python final_pipeline.py
-#
-#  Outputs: final_results.csv, final_fig_skill.png, final_fig_rmse.png
-#  Tip: set RUN_DEEP = False (top of file) for a fast run without LSTM/GRU.
-# =============================================================================

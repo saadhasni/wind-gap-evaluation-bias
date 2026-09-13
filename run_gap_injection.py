@@ -19,7 +19,7 @@ import final_pipeline as FP
 from dataset_adapters import load_wfip3_buoy
 from knmi_adapter import load_knmi_platform, longest_clean_block
 
-# =============================== CONFIG =====================================
+# CONFIG
 QUICK = False                # <-- set False for the full run
 
 STEP = pd.Timedelta('10min')
@@ -70,10 +70,9 @@ if QUICK:
     N_REPLICATES = 4
     OUT_CSV = 'gap_injection_v3_QUICK.csv'
     OUT_FIG = 'gap_injection_v3_QUICK.png'
-# ============================================================================
 
 
-# ------------------------------------------------------- gap injection
+# gap injection
 def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
     """
     Delete EXACTLY target_drop samples in gaps of approximately
@@ -121,7 +120,7 @@ def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
     return series[~drop], placed, float(np.mean(placed_lens))
 
 
-# ------------------------------------------------------------ features
+#  features
 def naive_features(series):
     """Gap-ignoring feature construction (common practice). Unchanged."""
     f = pd.DataFrame(index=series.index)
@@ -150,7 +149,7 @@ def fit_predict(name, Xtr, ytr, Xte):
     return p
 
 
-# -------------------------------------------------------- the evaluation
+#  the evaluation
 def window_bounds(base, H, origin_i):
     """
     Train/test boundaries as TIMESTAMPS on the original contiguous
@@ -175,7 +174,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
     """
     t_train_end, t_test_start, t_test_end = bounds
 
-    # ---------------- honest: gap-aware features, gap-valid rows only
+    #  honest: gap-aware features, gap-valid rows only
     fg = FP.build_features_segmented(gapped, STEP)
     cols = [c for c in fg.columns if c != '_seg']
     mask = FP.valid_rows_for_horizon(gapped, fg, H, SEQ_LEN)
@@ -194,7 +193,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
                        gapped.values[tr + H], fg.iloc[te][cols].values)
     ra_h = np.sqrt(mean_squared_error(y_te, pred))
 
-    # ---------------- naive: gap-ignoring features, every row in window
+    # naive: gap-ignoring features, every row in window
     fn = naive_features(gapped)
     dn = fn.copy()
     dn['target'] = gapped.shift(-H)
@@ -229,7 +228,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
     return out
 
 
-# ------------------------------------------------------- record loading
+# record loading
 def intact_persistence_rmse(base, H):
     """
     Persistence RMSE on the intact record over the same style of test
@@ -299,7 +298,7 @@ def boot_ci(x, n_boot=2000, seed=0):
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-# ------------------------------------------------------------------ main
+# main
 def main():
     t0 = time.time()
     mode = 'QUICK SUBSET' if QUICK else 'FULL RUN'
@@ -412,7 +411,7 @@ def main():
     print(df.groupby(['missing_frac', 'condition'])['mean_gap_len']
             .median().round(1).to_string())
 
-    # -------- mechanism check: is the persistence baseline handicapped?
+    # mechanism check: is the persistence baseline handicapped?
     print('\n' + '=' * 84)
     print('  CHECK: the mechanism. Naive evaluation should HANDICAP the')
     print('  persistence baseline by feeding it stale observations, so')
@@ -435,7 +434,7 @@ def main():
     print(f"    bias vs test_growth  pearson "
           f"{df.bias.corr(df.test_growth):+.3f}")
 
-    # -------- denominator sanity
+    # denominator sanity
     print('\n  Denominator sanity (rp_honest / intact rp; 1.0 is ideal):')
     bad = df[(df.rp_h_over_intact < 0.7) | (df.rp_h_over_intact > 1.4)]
     print(f"    median {df.rp_h_over_intact.median():.3f}   "
@@ -446,7 +445,7 @@ def main():
           f"{df.skill_honest.max():.1f}   "
           f"(runs below -100: {(df.skill_honest < -100).sum()})")
 
-    # -------- the result
+    # the result
     order = list(CONDITIONS.keys())
     print('\n' + '=' * 84)
     print('  MEAN BIAS BY CONDITION, WITH BOOTSTRAP 95% CI')
@@ -493,7 +492,7 @@ def main():
         print(f"    {rec:<9} within-origin sd {within:6.2f}   "
               f"overall sd {overall:6.2f}")
 
-    # ------------------------------------------------------------ figure
+    # figure
     recs = list(df.record.unique())
     fig, axes = plt.subplots(len(HORIZONS), len(recs),
                              figsize=(3.4 * len(recs), 3.6 * len(HORIZONS)),

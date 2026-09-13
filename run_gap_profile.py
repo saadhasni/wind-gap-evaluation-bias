@@ -1,53 +1,3 @@
-"""
-=============================================================================
-  run_gap_profile.py — what happens to forecast errors near a gap?
-=============================================================================
-  Supervisor item 5, both halves:
-
-  PART A — ERROR PROFILE BY DISTANCE FROM GAP
-    For every evaluated origin we record d, the number of consecutive
-    observations available up to and including that origin. d = 1 means
-    the origin is the FIRST observation after a gap, d = 2 the second,
-    and so on. Persistence RMSE and model RMSE are then reported for
-    each d. This is the evidence that the mechanism section currently
-    asserts but does not show.
-
-    Two distinct things happen near a gap, and they are separated here:
-
-      INPUT STALENESS   — at d = 1 under naive row-position indexing the
-                          persistence forecast uses an observation from
-                          before the gap, so its input is stale by the
-                          gap length.
-      TARGET DISPLACEMENT — the target at row+H may itself lie across a
-                          gap, so the forecast horizon is longer in real
-                          time than it appears.
-
-    Both are flagged per row so their contributions can be told apart.
-
-  PART B — DO GAPS FALL IN DIFFICULT PERIODS?
-    For each gap we take the window of observations immediately before it
-    and compute local variability (standard deviation of first
-    differences) and ramp magnitude. These are compared against the same
-    statistics over all windows in the record, with a Mann-Whitney test.
-    If instruments drop out during rough conditions, the rows adjacent to
-    gaps are intrinsically harder to forecast, which would contribute to
-    the bias independently of staleness.
-
-  WHY THIS MAY EXPLAIN THE SIGN
-    The paper reports positive bias on D3 and negative on D2 and calls the
-    direction an open question. If persistence degrades sharply at small d
-    while the model degrades less, naive evaluation flatters the model
-    (positive bias). If the model degrades more, the reverse. The profile
-    shows which, per record.
-
-  Runs in a few minutes. One model fit per record per horizon.
-
-  Requires:  final_pipeline.py, knmi_adapter.py, and dataset_adapters.py
-             for D2/D3. If the D2/D3 loader names differ from the guesses
-             below, the script prints what IS available in
-             dataset_adapters so the config can be corrected.
-=============================================================================
-"""
 import warnings, os, sys, gc
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -69,7 +19,7 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from knmi_adapter import load_knmi_platform
 
-# =============================== CONFIG =====================================
+# CONFIG 
 # Sampling step is per-record, not global: D1 is 1-minute, D2/D3/KNMI are
 # 10-minute. See load_all().
 # H=6 is included because D3 uses horizons (1, 3, 6) and the paper's
@@ -105,7 +55,6 @@ OUT_CSV = 'gap_profile_rows.csv'
 OUT_PROFILE_CSV = 'gap_profile_summary.csv'
 OUT_FIG = 'gap_profile_fig.png'
 OUT_FIG_CTX = 'gap_context_fig.png'
-# ============================================================================
 
 
 def naive_features(series):
@@ -368,7 +317,7 @@ def main():
               f"missing  {len(grid) / per_day:>6.1f} days  "
               f"step {int(step.total_seconds() / 60)} min")
 
-    # ---------------------------------------------------------- PART A
+    # PART A
     all_rows = []
     for name, s, step in records:
         for H in HORIZONS:
@@ -505,7 +454,7 @@ def main():
         cdf = pd.DataFrame()
         print('  Not enough gaps for the context test.')
 
-    # ----------------------------------------------------------- FIGURES
+    #  FIGURES
     recs = sorted(prof.record.unique())
     fig, axes = plt.subplots(len(HORIZONS), len(recs), squeeze=False,
                              figsize=(3.1 * len(recs), 3.4 * len(HORIZONS)),

@@ -1,29 +1,3 @@
-"""
-=============================================================================
-  knmi_adapter.py  (v2)  — loader for KNMI ZephIR 10-minute platform CSVs
-=============================================================================
-  FIX IN v2: KNMI encodes missing measurements as the fill value 9999
-  rather than leaving the field empty. v1 read those as real wind speeds,
-  which produced mean wind speeds of 160 m/s and, worse, reported records
-  as gap-free when they were not. Sentinels are height-specific: one level
-  can fail while others keep reporting, and 'Status Flags' still reads
-  'Fully Operational', so the status column does not catch it.
-
-  Quality handling applied here:
-    * values >= SENTINEL_MIN or < 0 are masked to NaN
-    * optional minimum packet count per averaging interval
-    * the series is placed on a strict 10-minute grid, so both absent rows
-      and masked rows appear as explicit NaN
-
-  Reported for each record: segment count, gap-length distribution, and
-  the longest unbroken run — the figures the paper's Table 1 needs, and
-  the ones that decide whether a record is usable for gap injection.
-
-  Usage:
-      python knmi_adapter.py knmi_bsb
-      python knmi_adapter.py knmi_bsb 38 10      # folder, height, packets
-=============================================================================
-"""
 import os
 import glob
 import numpy as np
@@ -123,9 +97,7 @@ def gap_report(df, col="wind_speed", step_min=10):
 def load_knmi_platform(folder, height=DEFAULT_HEIGHT, min_packets=None,
                        verbose=True):
     """Concatenate a folder of daily CSVs onto a strict 10-minute grid."""
-    # NOTE: Windows filesystems are case-insensitive, so globbing both
-    # *.CSV and *.csv matches every file twice. Collect case-insensitively
-    # and de-duplicate by resolved path.
+
     seen, files = set(), []
     for pattern in ("*.CSV", "*.csv"):
         for f in glob.glob(os.path.join(folder, pattern)):

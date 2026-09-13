@@ -1,30 +1,3 @@
-"""
-=============================================================================
-  make_figs_2_3.py - regenerate Figure 2 and Figure 3 with corrected labels
-=============================================================================
-  WHY THIS EXISTS
-
-  Table 4 of the manuscript labels the four configurations A (gap-aware),
-  B, D, C (naive). The original Figure 2 image says "A (honest)" and the
-  original Figure 3 legend says "gap-aware (honest)". The word "honest" was
-  the working name for run A during development and was replaced throughout
-  the text, but the figures were rendered before that change and still
-  carry it. A reader comparing the figure to the table cannot tell which
-  term is authoritative.
-
-  This script regenerates both figures with "gap-aware" throughout.
-  Nothing else changes: same layout, same colours, same data.
-
-  Figure 2 is a schematic and needs no input data.
-  Figure 3 reads artifact_aligned.csv, so it always matches Table 5.
-
-  USAGE
-      python make_figs_2_3.py
-
-  Place beside artifact_aligned.csv. Writes fig2_configurations.png and
-  fig3_skill.png at 200 dpi into the working directory.
-=============================================================================
-"""
 import os
 import matplotlib
 matplotlib.use('Agg')
@@ -43,9 +16,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(HERE, 'artifact_aligned.csv')
 
 
-# ---------------------------------------------------------------------------
 # Figure 2 - the four configurations (schematic, no data needed)
-# ---------------------------------------------------------------------------
+
 def figure2(path='fig2_configurations.png'):
     fig, ax = plt.subplots(figsize=(11.0, 4.1))
 
@@ -133,9 +105,8 @@ def figure2(path='fig2_configurations.png'):
     print('wrote', path)
 
 
-# ---------------------------------------------------------------------------
 # Figure 3 - reported skill under the two protocols
-# ---------------------------------------------------------------------------
+
 def figure3(path='fig3_skill.png', csv=CSV):
     df = pd.read_csv(csv)
     # column names as written by run_artifact_aligned.py; skill_honest is the

@@ -19,7 +19,7 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
-# ---------------- config ----------------
+# config 
 TRAIN_RATIO = 0.75
 SEED        = 42
 RUN_LSTM    = True     # set False for a fast run without the neural network
