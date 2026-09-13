@@ -1,0 +1,20 @@
+﻿archive/
+venv/
+__pycache__/
+*.pyc
+.vscode/
+buoy_data/
+onshore/
+knmi_bsa/
+knmi_bsb/
+knmi_hkza/
+knmi_hkzb/
+knmi_hkwa/
+knmi_hkwb/
+knmi_hkn/
+ZephIR_windlidar_*.csv
+onshore_wind.xlsx
+Wind Time Series Dataset*.xlsx
+gap_profile_rows.csv
+Wind Time Series Dataset*.xlsx
+Wind Time Series Dataset*.csv

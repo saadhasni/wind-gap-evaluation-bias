@@ -1,0 +1,4 @@
+dataset,n,span_days,completeness,mean,sd,vmin,vmax,p05,p95,segments,n_gaps,pct_after_gap,gap_median,gap_p95,gap_max,gap_median_samples,gap_max_samples
+D1 ZephIR,8639,6.0,100.0,9.78,2.58,1.23,17.83,5.29,14.05,1,0,0.0,-,-,-,0,0
+D2 Buoy 130,21859,170.8,88.88,7.89,3.59,0.47,21.91,2.45,14.47,24,23,0.11,0 days 00:40:00,3 days 16:45:59.999999999,3 days 23:40:00,4,574
+D3 Onshore,39195,364.9,74.58,6.86,2.07,0.09,19.79,3.94,10.52,1363,1362,3.47,0 days 00:40:00,0 days 06:20:00,3 days 05:50:00,4,467
