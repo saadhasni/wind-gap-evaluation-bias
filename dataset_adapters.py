@@ -1,27 +1,9 @@
-"""
-=============================================================================
-  dataset_adapters.py
-  Converts heterogeneous wind datasets into ONE standard format:
-      a pandas Series of wind speed (m/s), indexed by datetime,
-      on a regular time grid, ready for the forecasting pipeline.
-
-  Each adapter returns:  (series, meta_dict)
-    series : pd.Series  float wind speed, DatetimeIndex, regular grid
-    meta   : dict        name, height_m, resolution, site, license, notes
-
-  Add a new dataset by writing ONE function here. The pipeline never
-  changes — only the adapter does.
-=============================================================================
-"""
 import glob
 import os
 import numpy as np
 import pandas as pd
 
-
-# ---------------------------------------------------------------------------
 # Adapter 1 — ZephIR 300 (CSV, 1-second raw -> resample to chosen grid)
-# ---------------------------------------------------------------------------
 def load_zephir(folder, height_m=38, resample='1min'):
     """ZephIR 300 CSV files. Heights: 14,38,63,72,94,119,145,156,179,199,249."""
     files = sorted(set(glob.glob(os.path.join(
@@ -47,10 +29,7 @@ def load_zephir(folder, height_m=38, resample='1min'):
                 notes='1-s raw averaged to grid')
     return s, meta
 
-
-# ---------------------------------------------------------------------------
 # Adapter 2 — WFIP3 DOE Buoy 130 lidar (netCDF, native 10-minute)
-# ---------------------------------------------------------------------------
 def load_wfip3_buoy(folder, height_m=38, resample='10min'):
     """WFIP3 DOE Buoy 130 lidar netCDF (.nc). Heights:
     10,38,57,87,107,137,157,177,197,247,277. Native 10-min, QC flags 0/1."""
@@ -82,10 +61,7 @@ def load_wfip3_buoy(folder, height_m=38, resample='10min'):
                 notes='native 10-min, QC-filtered (qc==0 only)')
     return s, meta
 
-
-# ---------------------------------------------------------------------------
 # Registry — pipeline calls these by name
-# ---------------------------------------------------------------------------
 ADAPTERS = {
     'zephir': load_zephir,
     'wfip3_buoy': load_wfip3_buoy,
