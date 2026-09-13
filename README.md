@@ -10,7 +10,7 @@ supplementary material, starting from the raw public data.
 
 - Title: Evaluation Bias From Data Gaps in Short-Term Wind Forecasting for Grid Operations
 - Status: submitted to IEEE Transactions on Sustainable Energy
-- DOI (this code): [ADD ZENODO DOI HERE AFTER FIRST RELEASE]
+- DOI (this code): [10.5281/zenodo.22734491](https://doi.org/10.5281/zenodo.22734491)
 
 ## Setup
 
