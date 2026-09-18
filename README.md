@@ -84,7 +84,6 @@ not exactly zero, something upstream is broken and no other result should be tru
 ├── *_log.txt                      # console output of each run
 ├── *.png                          # figures as submitted
 ├── data/README.md                 # data sources and DOIs
-├── requirements.txt
 └── archive/                       # superseded scripts, not part of the reproduction path
 ```
 
