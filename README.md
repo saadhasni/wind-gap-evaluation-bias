@@ -83,7 +83,6 @@ not exactly zero, something upstream is broken and no other result should be tru
 ├── *.csv                          # result files, one per script above
 ├── *_log.txt                      # console output of each run
 ├── *.png                          # figures as submitted
-├── data/README.md                 # data sources and DOIs
 └── archive/                       # superseded scripts, not part of the reproduction path
 ```
 
