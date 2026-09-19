@@ -20,7 +20,7 @@ venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
 
-Set your KNMI API key (see `data/README.md` for how to obtain one):
+Set your KNMI API key:
 
 ```bash
 # Windows PowerShell
