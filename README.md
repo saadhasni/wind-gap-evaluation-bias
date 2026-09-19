@@ -32,8 +32,6 @@ $env:KNMI_API_KEY = "your-key-here"
 
 ## Getting the data
 
-See `data/README.md` for exact sources, DOIs, and where each file goes. In short:
-
 1. D1 (ZephIR) and the six additional KNMI platform records: run `knmi_auto.py` (needs
    `KNMI_API_KEY`; takes roughly 1 hour per platform including rate-limit pauses).
 2. D2 (WFIP3 buoy lidar): download from the DOE Wind Data Hub, place in `buoy_data/`.
