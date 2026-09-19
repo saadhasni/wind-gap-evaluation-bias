@@ -105,12 +105,6 @@ If you use this code, please cite the paper:
 [ADD FULL CITATION AFTER ACCEPTANCE]
 ```
 
-## License
-
-Code: MIT License (or your preferred license — add a LICENSE file).
-Data: see `data/README.md` for each source's license (all sources used here are CC-BY-4.0 or
-public domain).
-
 ## Contact
 
 M. S. Hasni — saadhasni14@gmail.com
