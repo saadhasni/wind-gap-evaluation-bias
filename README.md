@@ -97,14 +97,6 @@ resampled on row index and treated the two arms as independent; both defects are
 corrected in Section III-E. If you are adapting this code for a different fragmented time series,
 start from the corrected version and read that section first.
 
-## Citation
-
-If you use this code, please cite the paper:
-
-```
-[ADD FULL CITATION AFTER ACCEPTANCE]
-```
-
 ## Contact
 
 M. S. Hasni — saadhasni14@gmail.com
