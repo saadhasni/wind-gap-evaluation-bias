@@ -15,7 +15,7 @@ venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
 
-Set your KNMI API key (see `data/README.md` for how to obtain one):
+Set your KNMI API key:
 
 ```bash
 # Windows PowerShell
@@ -26,8 +26,6 @@ $env:KNMI_API_KEY = "your-key-here"
 ```
 
 ## Getting the data
-
-See `data/README.md` for exact sources, DOIs, and where each file goes. In short:
 
 1. D1 (ZephIR) and the six additional KNMI platform records: run `knmi_auto.py` (needs
    `KNMI_API_KEY`; takes roughly 1 hour per platform including rate-limit pauses).
@@ -78,8 +76,6 @@ not exactly zero, something upstream is broken and no other result should be tru
 ├── *.csv                          # result files, one per script above
 ├── *_log.txt                      # console output of each run
 ├── *.png                          # figures as submitted
-├── data/README.md                 # data sources and DOIs
-├── requirements.txt
 └── archive/                       # superseded scripts, not part of the reproduction path
 ```
 
@@ -92,7 +88,6 @@ strongly correlated. An earlier version of this code (kept in `archive/` for the
 resampled on row index and treated the two arms as independent; both defects are described and
 corrected in Section III-E. If you are adapting this code for a different fragmented time series,
 start from the corrected version and read that section first.
-
 
 ## Contact
 
