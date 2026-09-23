@@ -56,11 +56,11 @@ def figure2(path='fig2_configurations.png'):
                              facecolor='white', edgecolor='#9aa0a6',
                              linewidth=0.7, linestyle='-'))
                 continue
-            if name.startswith('C'):            # naive rows everywhere
+            if name.startswith('C'):            
                 colour = BLUE
-            elif name == 'D':                   # naive training, gap-valid test
+            elif name == 'D':                   
                 colour = BLUE if train_side else (GREY if kind == 'post_gap' else GREEN)
-            else:                               # A and B: gap-valid throughout
+            else:                              
                 colour = GREY if kind == 'post_gap' else GREEN
             ax.add_patch(mpatches.Rectangle((x0, y), w, bar_h,
                          facecolor=colour, edgecolor='none'))
@@ -109,8 +109,6 @@ def figure2(path='fig2_configurations.png'):
 
 def figure3(path='fig3_skill.png', csv=CSV):
     df = pd.read_csv(csv)
-    # column names as written by run_artifact_aligned.py; skill_honest is the
-    # gap-aware arm (run A) and is renamed here for display only
     order = [d for d in ['D1 ZephIR (contiguous)',
                          'D2 WFIP3 Buoy (few long gaps)',
                          'D3 Onshore (many short gaps)'] if d in set(df.dataset)]
@@ -126,10 +124,9 @@ def figure3(path='fig3_skill.png', csv=CSV):
         ax.bar(x - w / 2, g.skill_honest, w, color=GREEN, label='gap-aware')
         ax.bar(x + w / 2, g.skill_naive, w, color=ORANGE, label='naive')
 
-        # thin connector showing the shift, as in the original
         for xi, (a, c) in enumerate(zip(g.skill_honest, g.skill_naive)):
-            if abs(c - a) < 0.01:      # no bias: a flat line would look like
-                continue               # an error bar rather than a shift
+            if abs(c - a) < 0.01:      
+                continue               
             ax.plot([xi - w / 2, xi + w / 2], [a, c], color='#333333',
                     linewidth=0.9, zorder=3)
 

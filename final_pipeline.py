@@ -25,8 +25,8 @@ TRAIN_RATIO   = 0.75
 ARIMA_ORIGINS = 120          # strided ARIMA refit origins per horizon
 RNN_EPOCHS    = 30
 BOOT_N        = 500          # bootstrap resamples for RMSE CIs
-BOOT_BLOCK    = 50           # circular block length (samples)
-RUN_DEEP      = True         # set False to skip LSTM/GRU (much faster)
+BOOT_BLOCK    = 50           
+RUN_DEEP      = True         
 np.random.seed(SEED); tf.random.set_seed(SEED)
 
 MODEL_NAMES = ['Persistence', 'ARIMA', 'XGBoost', 'LSTM', 'GRU']

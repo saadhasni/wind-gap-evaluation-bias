@@ -6,11 +6,6 @@ for Grid Operations" (M. S. Hasni, A. Khalid, H. Ayoob, M. Khalid).
 This repository reproduces every table, figure, and reported number in the manuscript and its
 supplementary material, starting from the raw public data.
 
-## Paper
-
-- Title: Evaluation Bias From Data Gaps in Short-Term Wind Forecasting for Grid Operations
-- Status: submitted to IEEE Transactions on Sustainable Energy
-- DOI (this code): [ADD ZENODO DOI HERE AFTER FIRST RELEASE]
 
 ## Setup
 
@@ -98,19 +93,6 @@ resampled on row index and treated the two arms as independent; both defects are
 corrected in Section III-E. If you are adapting this code for a different fragmented time series,
 start from the corrected version and read that section first.
 
-## Citation
-
-If you use this code, please cite the paper:
-
-```
-[ADD FULL CITATION AFTER ACCEPTANCE]
-```
-
-## License
-
-Code: MIT License (or your preferred license — add a LICENSE file).
-Data: see `data/README.md` for each source's license (all sources used here are CC-BY-4.0 or
-public domain).
 
 ## Contact
 

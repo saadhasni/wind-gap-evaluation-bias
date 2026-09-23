@@ -1,0 +1,10 @@
+dataset,horizon,n_origins,mean_bias,sd_bias,ci_low,ci_high,sign_stable,excludes_zero
+D1 ZephIR (contiguous),1,6,0.12,0.49,-0.39,0.64,NO,False
+D1 ZephIR (contiguous),10,6,0.07,0.99,-0.97,1.11,NO,False
+D1 ZephIR (contiguous),30,6,0.46,1.16,-0.76,1.68,NO,False
+D2 WFIP3 Buoy (few long gaps),1,6,-3.32,2.44,-5.89,-0.76,yes,True
+D2 WFIP3 Buoy (few long gaps),3,6,-3.93,4.35,-8.5,0.64,NO,False
+D2 WFIP3 Buoy (few long gaps),6,6,-2.48,2.49,-5.09,0.13,NO,False
+D3 Onshore (many short gaps),1,6,6.02,3.97,1.86,10.18,yes,True
+D3 Onshore (many short gaps),3,6,9.0,3.92,4.88,13.12,yes,True
+D3 Onshore (many short gaps),6,6,10.13,2.79,7.2,13.06,yes,True

@@ -19,8 +19,8 @@ import final_pipeline as FP
 from dataset_adapters import load_wfip3_buoy
 from knmi_adapter import load_knmi_platform, longest_clean_block
 
-# CONFIG
-QUICK = False                # <-- set False for the full run
+# =============================== CONFIG =====================================
+QUICK = False                 # <-- set False for the full run
 
 STEP = pd.Timedelta('10min')
 SEQ_LEN = 12
@@ -37,7 +37,16 @@ N_ORIGINS = 5                 # rolling split boundaries, cycled
 ORIGIN_FRACS = (0.60, 0.65, 0.70, 0.75, 0.80)
 TEST_SPAN = 0.25              # test window length as a fraction of record
 
-
+# Well-conditioning guards. Runs failing these are recorded as skipped
+# rather than silently producing an unstable ratio.
+#
+# These were 600/250 in the first draft, which excluded MANY-SHORT
+# entirely: at 10% missing that condition leaves only ~700 gap-valid rows
+# in the whole record, so a test window can never reach 250. Since
+# MANY-SHORT is the condition the experiment exists to measure, the
+# thresholds are set to the lowest values that still give a stable
+# denominator under the fixed-window design, and n_test is reported on
+# every row so small-sample cells are visible rather than hidden.
 MIN_TRAIN_HONEST = 350
 MIN_TEST_HONEST = 120
 
@@ -61,9 +70,10 @@ if QUICK:
     N_REPLICATES = 4
     OUT_CSV = 'gap_injection_v3_QUICK.csv'
     OUT_FIG = 'gap_injection_v3_QUICK.png'
+# ============================================================================
 
 
-# gap injection
+# ------------------------------------------------------- gap injection
 def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
     """
     Delete EXACTLY target_drop samples in gaps of approximately
@@ -111,7 +121,7 @@ def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
     return series[~drop], placed, float(np.mean(placed_lens))
 
 
-#  features
+# ------------------------------------------------------------ features
 def naive_features(series):
     """Gap-ignoring feature construction (common practice). Unchanged."""
     f = pd.DataFrame(index=series.index)
@@ -140,7 +150,7 @@ def fit_predict(name, Xtr, ytr, Xte):
     return p
 
 
-#  the evaluation
+# -------------------------------------------------------- the evaluation
 def window_bounds(base, H, origin_i):
     """
     Train/test boundaries as TIMESTAMPS on the original contiguous
@@ -165,7 +175,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
     """
     t_train_end, t_test_start, t_test_end = bounds
 
-    #  honest: gap-aware features, gap-valid rows only
+    # ---------------- honest: gap-aware features, gap-valid rows only
     fg = FP.build_features_segmented(gapped, STEP)
     cols = [c for c in fg.columns if c != '_seg']
     mask = FP.valid_rows_for_horizon(gapped, fg, H, SEQ_LEN)
@@ -184,7 +194,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
                        gapped.values[tr + H], fg.iloc[te][cols].values)
     ra_h = np.sqrt(mean_squared_error(y_te, pred))
 
-    # naive: gap-ignoring features, every row in window
+    # ---------------- naive: gap-ignoring features, every row in window
     fn = naive_features(gapped)
     dn = fn.copy()
     dn['target'] = gapped.shift(-H)
@@ -219,7 +229,26 @@ def evaluate_arms(gapped, H, bounds, model_name):
     return out
 
 
-# record loading
+# ------------------------------------------------------- record loading
+def intact_model_skill(base, H, model_name):
+    """
+    Honest skill on the INTACT record over the same windows. With no gaps
+    the two protocols coincide, so this is the no-gap reference every
+    injected result should be read against. If a model is already far
+    below zero here, its behaviour under injection reflects the model,
+    not the gaps.
+    """
+    vals = []
+    for i in range(len(ORIGIN_FRACS)):
+        b = window_bounds(base, H, i)
+        if b is None:
+            continue
+        r = evaluate_arms(base, H, b, model_name)
+        if r is not None:
+            vals.append(r['skill_honest'])
+    return float(np.median(vals)) if vals else np.nan
+
+
 def intact_persistence_rmse(base, H):
     """
     Persistence RMSE on the intact record over the same style of test
@@ -289,7 +318,7 @@ def boot_ci(x, n_boot=2000, seed=0):
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-# main
+# ------------------------------------------------------------------ main
 def main():
     t0 = time.time()
     mode = 'QUICK SUBSET' if QUICK else 'FULL RUN'
@@ -309,13 +338,26 @@ def main():
               f"mean {s.mean():>5.2f}   sd_diff {s.diff().std():.3f}")
 
     rows, skipped = [], 0
-    intact_rp = {}
+    intact_rp, intact_sk = {}, {}
     for rec_name, base in records:
         for H in HORIZONS:
             intact_rp[(rec_name, H)] = intact_persistence_rmse(base, H)
-    print('\nIntact-record persistence RMSE (reference denominator):')
-    for (r, H), v in intact_rp.items():
-        print(f"   {r:<9} H={H}   {v:.4f}")
+            for mname in MODELS:
+                intact_sk[(rec_name, H, mname)] = intact_model_skill(
+                    base, H, mname)
+
+    print('\nNO-GAP REFERENCE (intact record, same windows).')
+    print('  Read every injected result against these. A model already far')
+    print('  below zero here is failing on the record, not on the gaps.')
+    print(f"   {'record':<9}{'H':>3}{'rp':>9}"
+          + ''.join(f"{m + ' skill':>16}" for m in MODELS))
+    for rec_name, _ in records:
+        for H in HORIZONS:
+            line = f"   {rec_name:<9}{H:>3}{intact_rp[(rec_name, H)]:>9.4f}"
+            for mname in MODELS:
+                v = intact_sk[(rec_name, H, mname)]
+                line += f"{v:>16.2f}" if v == v else f"{'n/a':>16}"
+            print(line)
 
     for rec_name, base in records:
         n = len(base)
@@ -359,6 +401,16 @@ def main():
                             r['intact_rp'] = round(ref, 4)
                             r['rp_h_over_intact'] = round(
                                 r['rmse_pers_honest'] / ref, 3) if ref else np.nan
+                            sk0 = intact_sk.get((rec_name, H, model_name),
+                                                np.nan)
+                            r['intact_skill'] = round(sk0, 3) if sk0 == sk0 \
+                                else np.nan
+                            # how much of the honest arm's position is the
+                            # gaps, as opposed to the model's baseline
+                            # performance on this record
+                            r['honest_vs_intact'] = round(
+                                r['skill_honest'] - sk0, 3) if sk0 == sk0 \
+                                else np.nan
                             rows.append(r)
                             acc.append(r)
                         if acc:
@@ -402,7 +454,7 @@ def main():
     print(df.groupby(['missing_frac', 'condition'])['mean_gap_len']
             .median().round(1).to_string())
 
-    # mechanism check: is the persistence baseline handicapped?
+    # -------- mechanism check: is the persistence baseline handicapped?
     print('\n' + '=' * 84)
     print('  CHECK: the mechanism. Naive evaluation should HANDICAP the')
     print('  persistence baseline by feeding it stale observations, so')
@@ -425,7 +477,7 @@ def main():
     print(f"    bias vs test_growth  pearson "
           f"{df.bias.corr(df.test_growth):+.3f}")
 
-    # denominator sanity
+    # -------- denominator sanity
     print('\n  Denominator sanity (rp_honest / intact rp; 1.0 is ideal):')
     bad = df[(df.rp_h_over_intact < 0.7) | (df.rp_h_over_intact > 1.4)]
     print(f"    median {df.rp_h_over_intact.median():.3f}   "
@@ -436,7 +488,7 @@ def main():
           f"{df.skill_honest.max():.1f}   "
           f"(runs below -100: {(df.skill_honest < -100).sum()})")
 
-    # the result
+    # -------- the result
     order = list(CONDITIONS.keys())
     print('\n' + '=' * 84)
     print('  MEAN BIAS BY CONDITION, WITH BOOTSTRAP 95% CI')
@@ -472,6 +524,41 @@ def main():
                           + ''.join(cells) + f"   {verdict}")
     print(f"\n  MONOTONIC IN {mono_ok}/{mono_tot} COMPLETE COMPARISONS")
 
+    print('\n' + '=' * 84)
+    print('  MODEL RELIABILITY. A model whose intact (no-gap) skill is far')
+    print('  below zero cannot support a skill-ratio comparison: its bias')
+    print('  estimates carry very wide intervals and can break monotonicity')
+    print('  for reasons unrelated to gap handling.')
+    print('=' * 84)
+    print(f"{'model':>9}{'intact skill':>14}{'honest skill':>14}"
+          f"{'bias sd':>10}{'|bias|>50':>11}{'runs<-100':>11}")
+    for mname in MODELS:
+        g = df[df.model == mname]
+        if not len(g):
+            continue
+        print(f"{mname:>9}{g.intact_skill.median():>14.2f}"
+              f"{g.skill_honest.median():>14.2f}{g.bias.std():>10.2f}"
+              f"{int((g.bias.abs() > 50).sum()):>11}"
+              f"{int((g.skill_honest < -100).sum()):>11}")
+    print('\n  Monotonicity by model:')
+    for mname in MODELS:
+        ok = tot = 0
+        for rec in df.record.unique():
+            for frac in MISSING_FRACS:
+                for H in HORIZONS:
+                    means = []
+                    for c in order:
+                        v = df[(df.record == rec) & (df.model == mname) &
+                               (df.missing_frac == frac) &
+                               (df.horizon == H) &
+                               (df.condition == c)]['bias']
+                        means.append(v.mean() if len(v) >= 3 else np.nan)
+                    if any(m != m for m in means):
+                        continue
+                    tot += 1
+                    ok += int(means[0] >= means[1] >= means[2])
+        print(f"    {mname:<9} {ok}/{tot}")
+
     print('\n  Variance attributable to split origin (bias sd within vs '
           'across origins):')
     for rec in df.record.unique():
@@ -483,7 +570,7 @@ def main():
         print(f"    {rec:<9} within-origin sd {within:6.2f}   "
               f"overall sd {overall:6.2f}")
 
-    # figure
+    # ------------------------------------------------------------ figure
     recs = list(df.record.unique())
     fig, axes = plt.subplots(len(HORIZONS), len(recs),
                              figsize=(3.4 * len(recs), 3.6 * len(HORIZONS)),

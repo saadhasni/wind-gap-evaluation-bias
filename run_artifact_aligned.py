@@ -143,7 +143,7 @@ def run(name, series, step, seq_len, horizons, out):
         if len(te) < 300:
             continue
 
-        # ---------------- A: honest
+        # A: honest
         y_te = series.values[te + H]
         y_now = fgap.iloc[te]['lag_0'].values
         m = XGBRegressor(**XGB)
@@ -153,13 +153,13 @@ def run(name, series, step, seq_len, horizons, out):
         sk_a = skill_from_err(eh_m, eh_p)
         _, p_a = diebold_mariano(eh_m, eh_p)
 
-        # ---------------- B: naive features, SAME rows
+        # B: naive features, SAME rows
         m = XGBRegressor(**XGB)
         m.fit(fnav.iloc[tr][ncols].values, series.values[tr + H])
         pred_b = m.predict(fnav.iloc[te][ncols].values)
         sk_b = skill_from_err(y_te - pred_b, eh_p)
 
-        # ---------------- C: naive features, naive rows, ALIGNED window
+        # C: naive features, naive rows, ALIGNED window
         dn = fnav.copy()
         dn['target'] = series.shift(-H)
         dn = dn.dropna()

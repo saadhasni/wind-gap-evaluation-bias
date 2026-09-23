@@ -19,7 +19,6 @@ OUT_CSV = 'artifact_audit.csv'
 
 
 def naive_features(series):
-    """Identical to run_artifact_study.py."""
     f = pd.DataFrame(index=series.index)
     f['lag_0'] = series
     for lag in (1, 2, 3, 5, 10, 30, 60):
@@ -93,7 +92,7 @@ def interpolation_report():
               f"({100 * (filled - raw_n) / max(filled, 1):.2f}% of series)")
     except Exception as e:
         print(f'  D2: {e}')
-    print('  D3 Onshore: no interpolation (loaded with dropna only)')
+    print('  D3 Onshore: no interpolation')
     print()
 
 

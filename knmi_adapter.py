@@ -16,9 +16,7 @@ DEFAULT_HEIGHT = 38
 # 10-minute mean wind speed ever recorded anywhere is well under 60 m/s.
 SENTINEL_MIN = 100.0
 
-# Reported heights are relative to the lidar on the platform roof deck.
-# Add the offset for metres above mean sea level.
-# CONFIRM against the KNMI dataset page before quoting in the paper.
+
 PLATFORM_OFFSET_M = {
     "BSA": 45, "BSB": 45, "HKZA": 45, "HKZB": 45,
     "HKN": 43, "HKWA": 43, "HKWB": 43,

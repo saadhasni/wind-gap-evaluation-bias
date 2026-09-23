@@ -74,7 +74,6 @@ def run(name, series, step, seq_len, horizons, out):
 
         a_start, a_end = series.index[te[0]], series.index[te[-1]]
 
-        # naive frame, its own training split, evaluation restricted to A's window
         dn = fnav.copy()
         dn['target'] = series.shift(-H)
         dn = dn.dropna()
@@ -86,7 +85,6 @@ def run(name, series, step, seq_len, horizons, out):
         if len(teC) < 300:
             continue
 
-        # run D evaluates the naive-trained model on A's exact rows
         teD_idx = series.index[te]
 
         y_A = series.values[te + H]

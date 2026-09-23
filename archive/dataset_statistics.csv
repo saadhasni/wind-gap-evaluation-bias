@@ -1,0 +1,4 @@
+dataset,n_samples,span_days,completeness_pct,mean_ms,sd_ms,min_ms,max_ms,n_segments,n_gaps,rows_after_gap_pct,gap_median_samples,gap_p95_samples,gap_max_samples,gap_median,gap_p95,gap_max
+D1 ZephIR (contiguous),8639,6.0,100.0,9.78,2.58,1.23,17.83,1,0,0.0,0,0,0,-,-,-
+D2 WFIP3 Buoy (few long gaps),21859,170.8,88.88,7.89,3.59,0.47,21.9,24,23,0.11,4,532,574,0 days 00:40:00,3 days 16:45:59.999999999,3 days 23:40:00
+D3 Onshore (many short gaps),39195,364.9,74.58,6.86,2.07,0.09,19.79,1363,1362,3.47,4,38,467,0 days 00:40:00,0 days 06:20:00,3 days 05:50:00

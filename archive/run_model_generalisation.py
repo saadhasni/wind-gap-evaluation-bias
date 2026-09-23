@@ -19,15 +19,14 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
-# config 
+# ---------------- config ----------------
 TRAIN_RATIO = 0.75
 SEED        = 42
 RUN_LSTM    = True     # set False for a fast run without the neural network
 LSTM_EPOCHS = 20
-MIN_TEST    = 200
 
 MODELS_FAST = {
-    'Ridge':        lambda: Ridge(alpha=1.0),
+    'Ridge':        lambda: Ridge(alpha=1.0, random_state=SEED),
     'RandomForest': lambda: RandomForestRegressor(
                         n_estimators=200, max_depth=12, n_jobs=-1,
                         random_state=SEED),
@@ -39,6 +38,7 @@ MODELS_FAST = {
 
 
 def naive_features(series):
+    """Gap-ignoring feature construction (common practice)."""
     f = pd.DataFrame(index=series.index)
     f['lag_0'] = series
     for lag in (1, 2, 3, 5, 10, 30, 60):
@@ -61,7 +61,7 @@ def skill(y, pred, persist):
 
 
 def fit_predict_tabular(name, Xtr, ytr, Xte):
-    
+    """Ridge needs scaling; trees do not."""
     if name == 'Ridge':
         sc = StandardScaler().fit(Xtr)
         m = MODELS_FAST[name]()
@@ -73,7 +73,7 @@ def fit_predict_tabular(name, Xtr, ytr, Xte):
 
 
 def fit_predict_lstm(seq_len, series, tr_pos, te_pos, H, fit_end_pos):
-   
+    """LSTM on raw scaled sequences. tr_pos/te_pos are POSITIONS in `series`."""
     import tensorflow as tf
     tf.get_logger().setLevel('ERROR')
     from tensorflow.keras.models import Sequential
@@ -104,6 +104,7 @@ def run_dataset(name, series, step, seq_len, horizons, out):
     fgap = FP.build_features_segmented(series, step)
     gcols = [c for c in fgap.columns if c != '_seg']
     fnav = naive_features(series)
+    ncols = list(fnav.columns)
 
     for H in horizons:
         mask = FP.valid_rows_for_horizon(series, fgap, H, seq_len)
@@ -116,82 +117,54 @@ def run_dataset(name, series, step, seq_len, horizons, out):
         if len(te) < 300:
             continue
 
-        # honest (A): gap-aware features, gap-aware rows
+        # ---- honest (A): gap-aware features, gap-aware rows ----
         y_te_A = series.values[te + H]
         pers_A = fgap.iloc[te]['lag_0'].values
         Xtr_A, Xte_A = fgap.iloc[tr][gcols].values, fgap.iloc[te][gcols].values
         ytr_A = series.values[tr + H]
 
-        # A's calendar test window
-        a_start = series.index[te[0]]
-        a_end = series.index[te[-1]]
-
-        # naive (C): naive features, all rows in A's window
+        # ---- naive (C): naive features, naive rows ----
         dn = fnav.copy()
         dn['target'] = series.shift(-H)
         dn = dn.dropna()
         fc = [c for c in dn.columns if c != 'target']
         s2 = int(len(dn) * TRAIN_RATIO)
-        tr2 = dn.iloc[:s2]
-        te2_all = dn.iloc[s2:]
-
-        # score C on A's calendar window 
-        te2 = te2_all[(te2_all.index >= a_start) & (te2_all.index <= a_end)]
-        if len(te2) < MIN_TEST:
-            print(f"  H={H}: aligned naive test only {len(te2)} rows — skipped")
-            continue
+        tr2, te2 = dn.iloc[:s2], dn.iloc[s2:]
         y_te_C = te2['target'].values
         pers_C = te2['lag_0'].values
 
-        print(f"  H={H:>2} | valid={len(rows):6d} test A={len(te):5d} "
-              f"C={len(te2):5d} (unaligned {len(te2_all)})  "
-              f"expansion x{len(te2)/len(te):.2f}")
+        print(f"  H={H:>2} | valid={len(rows):6d} test A={len(te):5d} C={len(te2):5d}")
 
         names = list(MODELS_FAST) + (['LSTM'] if RUN_LSTM else [])
         for mname in names:
             t0 = time.time()
             if mname == 'LSTM':
                 pa = fit_predict_lstm(seq_len, series, tr, te, H, te[0])
-                sk_A = skill(y_te_A, pa, pers_A)
-
-            
+                # naive LSTM: positions of the naive rows within `series`
                 pos_all = series.index.get_indexer(dn.index)
                 ok = pos_all >= seq_len - 1
                 pos_ok = pos_all[ok]
-                idx_ok = dn.index[ok]
-                boundary = dn.index[s2]
-                n_tr2 = int((idx_ok < boundary).sum())
-                tr_p = pos_ok[:n_tr2]
-                te_p = pos_ok[n_tr2:]
-                te_t = idx_ok[n_tr2:]
-                keep = (te_t >= a_start) & (te_t <= a_end)
-                te_p = te_p[keep]
-                if len(te_p) < MIN_TEST or len(tr_p) < 300:
-                    print(f"        {mname:<13} skipped "
-                          f"(train {len(tr_p)}, test {len(te_p)})")
-                    continue
+                n_tr2 = int((dn.index[ok] < te2.index[0]).sum())
+                tr_p, te_p = pos_ok[:n_tr2], pos_ok[n_tr2:]
                 pc = fit_predict_lstm(seq_len, series, tr_p, te_p, H, te_p[0])
-                sk_C = skill(series.values[te_p + H], pc,
-                             series.values[te_p])
-                n_c = len(te_p)
+                yC, pC = series.values[te_p + H], pc
+                sk_C = skill(yC, pC, series.values[te_p])
+                sk_A = skill(y_te_A, pa, pers_A)
             else:
                 pa = fit_predict_tabular(mname, Xtr_A, ytr_A, Xte_A)
                 pc = fit_predict_tabular(mname, tr2[fc].values,
                                          tr2['target'].values, te2[fc].values)
                 sk_A = skill(y_te_A, pa, pers_A)
                 sk_C = skill(y_te_C, pc, pers_C)
-                n_c = len(te2)
 
             bias = sk_C - sk_A
-            print(f"        {mname:<13} honest {sk_A:+7.2f}%  "
-                  f"naive {sk_C:+7.2f}%  bias {bias:+7.2f}   "
-                  f"({time.time()-t0:.0f}s)")
+            print(f"        {mname:<13} honest {sk_A:+7.2f}%  naive {sk_C:+7.2f}%  "
+                  f"bias {bias:+7.2f}   ({time.time()-t0:.0f}s)")
             out.append(dict(dataset=name, horizon=H, model=mname,
                             skill_honest=round(sk_A, 2),
                             skill_naive=round(sk_C, 2),
                             bias=round(bias, 2),
-                            n_test_honest=len(te), n_test_naive=n_c,
-                            n_test_naive_unaligned=len(te2_all)))
+                            n_test_honest=len(te), n_test_naive=len(te2)))
 
 
 if __name__ == '__main__':
@@ -226,8 +199,8 @@ if __name__ == '__main__':
         print('No results produced.'); sys.exit(0)
 
     df = pd.DataFrame(out)
-    df.to_csv('model_generalisation_aligned.csv', index=False)
-    print(f"\nSaved model_generalisation_aligned.csv ({len(df)} rows)")
+    df.to_csv('model_generalisation.csv', index=False)
+    print(f"\nSaved model_generalisation.csv ({len(df)} rows)")
 
     print("\n" + "=" * 74)
     print("  MEAN BIAS BY DATASET AND MODEL (percentage points)")
@@ -235,19 +208,10 @@ if __name__ == '__main__':
     piv = df.pivot_table(index='dataset', columns='model', values='bias',
                          aggfunc='mean').round(2)
     print(piv.to_string())
-
-    print("\n  Sign agreement per dataset/horizon (does every model family "
-          "agree?)")
-    agree = tot = 0
-    for (ds, H), g in df.groupby(['dataset', 'horizon']):
-        signs = np.sign(g['bias'].values)
-        tot += 1
-        ok = np.all(signs == signs[0])
-        agree += int(ok)
-        print(f"    {ds:<32} H={H:<3} "
-              f"{'all agree' if ok else 'MIXED'}  "
-              f"({', '.join(f'{m}:{b:+.1f}' for m, b in zip(g.model, g.bias))})")
-    print(f"\n  Model families agree on sign in {agree}/{tot} cases")
+    same = (np.sign(df.groupby(['dataset', 'horizon'])['bias']
+                    .transform('mean')) == np.sign(df['bias']))
+    print(f"\nBias sign agrees with the per-case mean in "
+          f"{int(same.sum())} of {len(df)} model-cases")
 
     fig, axes = plt.subplots(1, df['dataset'].nunique(),
                              figsize=(5.6 * df['dataset'].nunique(), 4.3),
@@ -260,10 +224,8 @@ if __name__ == '__main__':
         ax.set_xlabel('Horizon (steps)')
         ax.set_ylabel('Bias: naive \u2212 honest (pts)')
         ax.legend(fontsize=7); ax.grid(alpha=0.3, axis='y')
-    fig.suptitle('Gap-handling bias across model families '
-                 '(calendar-aligned windows)',
+    fig.suptitle('Gap-handling bias across model families',
                  fontsize=12, fontweight='bold')
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    fig.savefig('model_generalisation_aligned_fig.png', dpi=150,
-                bbox_inches='tight')
-    print('Saved model_generalisation_aligned_fig.png')
+    fig.savefig('model_generalisation_fig.png', dpi=150, bbox_inches='tight')
+    print('Saved model_generalisation_fig.png')

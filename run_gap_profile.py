@@ -19,12 +19,7 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from knmi_adapter import load_knmi_platform
 
-# CONFIG 
-# Sampling step is per-record, not global: D1 is 1-minute, D2/D3/KNMI are
-# 10-minute. See load_all().
-# H=6 is included because D3 uses horizons (1, 3, 6) and the paper's
-# headline result is the H=6 case, which is where the sign question is
-# sharpest. Records too short or too gappy to support it are skipped.
+
 HORIZONS = (1, 3, 6)
 MAX_D = 12                    # profile distances d = 1 .. MAX_D
 TRAIN_RATIO = 0.75            # retained for reference; walk-forward is used
@@ -46,7 +41,7 @@ KNMI_FOLDERS = [('BSB', 'knmi_bsb'), ('HKN', 'knmi_hkn'),
 # D1 / D2 / D3 from the paper.
 # dataset_adapters.py provides only load_zephir and load_wfip3_buoy. D3 has
 # no adapter, so load_d3_onshore() below reproduces the inline read used in
-# run_artifact_study.py, plausibility mask included.
+# run_artifact_aligned.py, plausibility mask included.
 INCLUDE_D1 = True
 D1_DIR = '.'                  # the ZephIR_windlidar_BSA_1s_*.CSV files
 BUOY_DIR = 'buoy_data'
@@ -86,13 +81,7 @@ def fit_predict(Xtr, ytr, Xte):
 
 
 def grid_and_runs(series, step):
-    """
-    Put the series on a strict grid, then for every present sample compute
-      d          run length of present samples ending here (1 = first
-                 observation after a gap)
-      gap_before length in samples of the gap immediately preceding this
-                 run (0 if the run starts the record)
-    """
+  
     grid = pd.date_range(series.index.min(), series.index.max(), freq=step)
     s = series.reindex(grid)
     present = s.notna().values
@@ -115,21 +104,7 @@ def grid_and_runs(series, step):
 
 
 def profile_record(name, series, H, step):
-    """
-    Evaluate the naive protocol on a record with real gaps and return one
-    row per scored origin, tagged with distance from gap.
-
-    WALK-FORWARD: a single 75/25 split scores only the final quarter, and
-    on records whose gaps happen to fall earlier that quarter can contain
-    no gaps at all. D2 was the extreme case - its test quarter had zero
-    post-gap rows (minimum d = 666), so it produced no profile.
-
-    Instead the record is cut into N_FOLDS blocks. Block 0 is training
-    only; each later block is scored by a model trained on everything
-    before it. Every row from block 1 onward is therefore scored exactly
-    once, out of sample, and near-gap rows anywhere in the record
-    contribute.
-    """
+  
     s_grid, present, d_arr, gb_arr = grid_and_runs(series, step)
     meta = pd.DataFrame({'d': d_arr, 'gap_before': gb_arr},
                         index=s_grid.index)[present]
@@ -184,7 +159,6 @@ def profile_record(name, series, H, step):
 
 
 def gap_context(name, series, step):
-    """Are the windows immediately before gaps unusually variable?"""
     s_grid, present, d_arr, _ = grid_and_runs(series, step)
     v = s_grid.values
     n = len(v)
@@ -225,13 +199,7 @@ def gap_context(name, series, step):
 
 
 def load_d3_onshore():
-    """
-    D3, the onshore turbine record. There is no adapter for it, so this
-    reproduces exactly what run_artifact_study.py does at lines 173-178,
-    including the 0-45 m/s plausibility mask. Rows that mask removes
-    become gaps, which is precisely what this analysis measures, so the
-    filter must match the paper's or the gap structure will differ.
-    """
+
     import glob
     cand = [x for x in glob.glob(os.path.join(HERE, 'onshore', '*.csv'))
             if '10min' in x]
@@ -245,11 +213,7 @@ def load_d3_onshore():
 
 
 def load_all():
-    """
-    Returns [(name, series, step)]. Each record carries its own sampling
-    step: D1 is 1-minute, everything else 10-minute. Using one global step
-    would mis-grid D1 and report every sample as a gap.
-    """
+ 
     recs = []
     for name, folder in KNMI_FOLDERS:
         p = os.path.join(HERE, folder)
@@ -268,9 +232,7 @@ def load_all():
 
     avail = [a for a in dir(DA) if a.startswith('load_')]
 
-    # D1 — ZephIR BSA, 1-minute. Contiguous, so it contributes no
-    # distance-from-gap rows, but it is loaded so the record list matches
-    # the paper and any stray gaps would be caught.
+  
     if INCLUDE_D1 and hasattr(DA, 'load_zephir'):
         try:
             r = DA.load_zephir(D1_DIR, height_m=38, resample='1min')
@@ -290,7 +252,7 @@ def load_all():
         except Exception as e:
             print(f"  D2 load failed: {e}")
 
-    # D3 — onshore turbine, read the same way run_artifact_study.py reads it
+    # D3 — onshore turbine
     try:
         s = load_d3_onshore()
         recs.append(('D3_ONSHORE', s, pd.Timedelta('10min')))
@@ -300,7 +262,6 @@ def load_all():
 
 
 def main():
-    print('Gap profile analysis — supervisor item 5')
     print(f'  model {MODEL}   horizons {HORIZONS}   max distance {MAX_D}\n')
 
     records = load_all()

@@ -1,0 +1,55 @@
+dataset,horizon,origin,train_frac,skill_honest,skill_naive,bias,n_test_honest,n_test_naive
+D1 ZephIR (contiguous),1,1,0.5,-201.77,-202.34,-0.57,1654,1715
+D1 ZephIR (contiguous),1,2,0.56,5.99,5.79,-0.2,1655,1716
+D1 ZephIR (contiguous),1,3,0.62,8.15,8.63,0.48,1654,1715
+D1 ZephIR (contiguous),1,4,0.68,6.31,6.24,-0.07,1654,1715
+D1 ZephIR (contiguous),1,5,0.74,5.56,5.87,0.32,1655,1716
+D1 ZephIR (contiguous),1,6,0.8,0.22,1.0,0.78,1655,1716
+D1 ZephIR (contiguous),10,1,0.5,-212.96,-211.65,1.3,1644,1714
+D1 ZephIR (contiguous),10,2,0.56,-19.11,-19.32,-0.21,1644,1714
+D1 ZephIR (contiguous),10,3,0.62,-1.48,-1.96,-0.47,1644,1714
+D1 ZephIR (contiguous),10,4,0.68,-0.68,-1.99,-1.31,1644,1714
+D1 ZephIR (contiguous),10,5,0.74,-9.44,-8.32,1.12,1643,1713
+D1 ZephIR (contiguous),10,6,0.8,-6.0,-6.02,-0.02,1644,1714
+D1 ZephIR (contiguous),30,1,0.5,-111.1,-110.44,0.66,1620,1710
+D1 ZephIR (contiguous),30,2,0.56,-23.4,-22.82,0.58,1620,1710
+D1 ZephIR (contiguous),30,3,0.62,-21.31,-20.69,0.62,1620,1710
+D1 ZephIR (contiguous),30,4,0.68,-24.77,-26.39,-1.62,1620,1710
+D1 ZephIR (contiguous),30,5,0.74,-17.18,-15.19,2.0,1620,1710
+D1 ZephIR (contiguous),30,6,0.8,-11.17,-10.66,0.51,1620,1710
+D2 WFIP3 Buoy (few long gaps),1,1,0.5,-3.89,-9.36,-5.47,4101,4359
+D2 WFIP3 Buoy (few long gaps),1,2,0.56,-3.59,-4.75,-1.16,4101,4360
+D2 WFIP3 Buoy (few long gaps),1,3,0.62,-2.77,-3.24,-0.47,4101,4360
+D2 WFIP3 Buoy (few long gaps),1,4,0.68,-2.81,-4.57,-1.76,4101,4360
+D2 WFIP3 Buoy (few long gaps),1,5,0.74,-1.25,-6.71,-5.46,4101,4360
+D2 WFIP3 Buoy (few long gaps),1,6,0.8,-1.54,-7.18,-5.63,4102,4360
+D2 WFIP3 Buoy (few long gaps),3,1,0.5,-4.11,-6.64,-2.52,4092,4359
+D2 WFIP3 Buoy (few long gaps),3,2,0.56,-4.49,-5.05,-0.56,4092,4359
+D2 WFIP3 Buoy (few long gaps),3,3,0.62,-4.2,-4.0,0.2,4092,4359
+D2 WFIP3 Buoy (few long gaps),3,4,0.68,-3.88,-5.8,-1.93,4092,4359
+D2 WFIP3 Buoy (few long gaps),3,5,0.74,-2.72,-12.71,-9.99,4092,4359
+D2 WFIP3 Buoy (few long gaps),3,6,0.8,-3.5,-12.27,-8.78,4093,4360
+D2 WFIP3 Buoy (few long gaps),6,1,0.5,-1.45,-4.23,-2.78,4078,4359
+D2 WFIP3 Buoy (few long gaps),6,2,0.56,-3.04,-2.73,0.31,4078,4358
+D2 WFIP3 Buoy (few long gaps),6,3,0.62,-3.13,-4.23,-1.1,4078,4359
+D2 WFIP3 Buoy (few long gaps),6,4,0.68,-3.36,-3.87,-0.5,4078,4358
+D2 WFIP3 Buoy (few long gaps),6,5,0.74,-2.56,-8.21,-5.65,4078,4359
+D2 WFIP3 Buoy (few long gaps),6,6,0.8,-3.05,-8.22,-5.17,4079,4359
+D3 Onshore (many short gaps),1,1,0.5,-7.05,0.79,7.84,2707,7826
+D3 Onshore (many short gaps),1,2,0.56,-8.94,1.32,10.26,2707,7826
+D3 Onshore (many short gaps),1,3,0.62,-8.17,2.32,10.49,2708,7826
+D3 Onshore (many short gaps),1,4,0.68,1.21,3.29,2.08,2708,7826
+D3 Onshore (many short gaps),1,5,0.74,2.19,4.6,2.4,2707,7826
+D3 Onshore (many short gaps),1,6,0.8,1.77,4.83,3.06,2708,7827
+D3 Onshore (many short gaps),3,1,0.5,-7.93,3.02,10.96,2621,7826
+D3 Onshore (many short gaps),3,2,0.56,-6.16,4.74,10.9,2621,7827
+D3 Onshore (many short gaps),3,3,0.62,-9.02,5.56,14.58,2621,7827
+D3 Onshore (many short gaps),3,4,0.68,1.6,5.06,3.46,2621,7827
+D3 Onshore (many short gaps),3,5,0.74,-0.84,6.06,6.89,2621,7827
+D3 Onshore (many short gaps),3,6,0.8,-0.9,6.29,7.19,2622,7827
+D3 Onshore (many short gaps),6,1,0.5,-5.54,5.9,11.44,2498,7826
+D3 Onshore (many short gaps),6,2,0.56,-3.42,8.03,11.45,2498,7826
+D3 Onshore (many short gaps),6,3,0.62,-4.2,8.55,12.75,2498,7826
+D3 Onshore (many short gaps),6,4,0.68,3.23,8.04,4.81,2498,7826
+D3 Onshore (many short gaps),6,5,0.74,-1.29,8.54,9.83,2498,7826
+D3 Onshore (many short gaps),6,6,0.8,-1.83,8.66,10.5,2498,7826

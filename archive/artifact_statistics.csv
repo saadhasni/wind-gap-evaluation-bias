@@ -1,0 +1,10 @@
+dataset,horizon,skill_honest,dm_p_honest,skill_naive,dm_p_naive,bias,bias_ci_low,bias_ci_high,ci_excludes_zero,n_test_honest,n_test_naive
+D1 ZephIR300 (contiguous),1,1.02,0.559,1.25,0.4574,0.23,-6.25,6.58,False,2084,2145
+D1 ZephIR300 (contiguous),10,-7.88,0.02,-7.23,0.0267,0.65,-10.84,11.57,False,2073,2143
+D1 ZephIR300 (contiguous),30,-16.1,0.0006,-14.99,0.0009,1.11,-17.23,18.91,False,2048,2138
+D2 WFIP3 Buoy (few long gaps),1,-1.82,0.0159,-5.35,0.0004,-3.53,-7.49,-0.14,True,5136,5450
+D2 WFIP3 Buoy (few long gaps),3,-2.99,0.0417,-12.01,0.043,-9.02,-25.5,1.96,False,5125,5449
+D2 WFIP3 Buoy (few long gaps),6,-2.54,0.2412,-6.62,0.0631,-4.07,-14.59,4.52,False,5109,5449
+D3 Onshore turbine (many short gaps),1,1.17,0.2052,4.4,0.0,3.22,1.19,5.49,True,3394,9784
+D3 Onshore turbine (many short gaps),3,-0.53,0.7263,5.82,0.0,6.35,3.4,9.68,True,3287,9783
+D3 Onshore turbine (many short gaps),6,0.0,0.9983,8.74,0.0,8.73,4.72,13.13,True,3133,9783
