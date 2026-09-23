@@ -19,7 +19,7 @@ import final_pipeline as FP
 from dataset_adapters import load_wfip3_buoy
 from knmi_adapter import load_knmi_platform, longest_clean_block
 
-# =============================== CONFIG =====================================
+# CONFIG 
 QUICK = False                 # <-- set False for the full run
 
 STEP = pd.Timedelta('10min')
@@ -37,16 +37,6 @@ N_ORIGINS = 5                 # rolling split boundaries, cycled
 ORIGIN_FRACS = (0.60, 0.65, 0.70, 0.75, 0.80)
 TEST_SPAN = 0.25              # test window length as a fraction of record
 
-# Well-conditioning guards. Runs failing these are recorded as skipped
-# rather than silently producing an unstable ratio.
-#
-# These were 600/250 in the first draft, which excluded MANY-SHORT
-# entirely: at 10% missing that condition leaves only ~700 gap-valid rows
-# in the whole record, so a test window can never reach 250. Since
-# MANY-SHORT is the condition the experiment exists to measure, the
-# thresholds are set to the lowest values that still give a stable
-# denominator under the fixed-window design, and n_test is reported on
-# every row so small-sample cells are visible rather than hidden.
 MIN_TRAIN_HONEST = 350
 MIN_TEST_HONEST = 120
 
@@ -70,20 +60,11 @@ if QUICK:
     N_REPLICATES = 4
     OUT_CSV = 'gap_injection_v3_QUICK.csv'
     OUT_FIG = 'gap_injection_v3_QUICK.png'
-# ============================================================================
 
 
-# ------------------------------------------------------- gap injection
+# gap injection
 def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
-    """
-    Delete EXACTLY target_drop samples in gaps of approximately
-    nominal_len, non-overlapping, away from the edges.
-
-    n_gaps is rounded rather than floored, and the lengths are
-    n_drop // n_gaps with the remainder spread one sample at a time, so
-    the achieved missing fraction matches the target exactly. The actual
-    mean gap length is returned so it can be reported rather than assumed.
-    """
+  
     rng = np.random.default_rng(seed)
     n = len(series)
     n_gaps = max(1, int(round(target_drop / nominal_len)))
@@ -121,7 +102,7 @@ def inject_gaps_exact(series, target_drop, nominal_len, seed, margin=200):
     return series[~drop], placed, float(np.mean(placed_lens))
 
 
-# ------------------------------------------------------------ features
+# features
 def naive_features(series):
     """Gap-ignoring feature construction (common practice). Unchanged."""
     f = pd.DataFrame(index=series.index)
@@ -150,13 +131,9 @@ def fit_predict(name, Xtr, ytr, Xte):
     return p
 
 
-# -------------------------------------------------------- the evaluation
+#  the evaluation
 def window_bounds(base, H, origin_i):
-    """
-    Train/test boundaries as TIMESTAMPS on the original contiguous
-    timeline. Both protocols use these, so both score the same calendar
-    interval and differ only in which rows inside it they retain.
-    """
+ 
     n = len(base)
     f_o = ORIGIN_FRACS[origin_i % len(ORIGIN_FRACS)]
     train_end = int(f_o * n)
@@ -169,13 +146,10 @@ def window_bounds(base, H, origin_i):
 
 
 def evaluate_arms(gapped, H, bounds, model_name):
-    """
-    Honest and naive evaluation over the SAME calendar window.
-    Returns a dict of every component, or None if guards fail.
-    """
+    
     t_train_end, t_test_start, t_test_end = bounds
 
-    # ---------------- honest: gap-aware features, gap-valid rows only
+    # honest: gap-aware features, gap-valid rows only
     fg = FP.build_features_segmented(gapped, STEP)
     cols = [c for c in fg.columns if c != '_seg']
     mask = FP.valid_rows_for_horizon(gapped, fg, H, SEQ_LEN)
@@ -194,7 +168,7 @@ def evaluate_arms(gapped, H, bounds, model_name):
                        gapped.values[tr + H], fg.iloc[te][cols].values)
     ra_h = np.sqrt(mean_squared_error(y_te, pred))
 
-    # ---------------- naive: gap-ignoring features, every row in window
+    # naive: gap-ignoring features, every row in window
     fn = naive_features(gapped)
     dn = fn.copy()
     dn['target'] = gapped.shift(-H)
@@ -229,15 +203,9 @@ def evaluate_arms(gapped, H, bounds, model_name):
     return out
 
 
-# ------------------------------------------------------- record loading
+# record loading
 def intact_model_skill(base, H, model_name):
-    """
-    Honest skill on the INTACT record over the same windows. With no gaps
-    the two protocols coincide, so this is the no-gap reference every
-    injected result should be read against. If a model is already far
-    below zero here, its behaviour under injection reflects the model,
-    not the gaps.
-    """
+
     vals = []
     for i in range(len(ORIGIN_FRACS)):
         b = window_bounds(base, H, i)
@@ -250,12 +218,7 @@ def intact_model_skill(base, H, model_name):
 
 
 def intact_persistence_rmse(base, H):
-    """
-    Persistence RMSE on the intact record over the same style of test
-    window. Used as a REFERENCE denominator: if the honest arm's rp
-    departs far from this, its test window is unrepresentative and the
-    skill ratio should not be trusted.
-    """
+  
     vals = []
     for i in range(len(ORIGIN_FRACS)):
         b = window_bounds(base, H, i)
@@ -318,7 +281,7 @@ def boot_ci(x, n_boot=2000, seed=0):
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-# ------------------------------------------------------------------ main
+#  main
 def main():
     t0 = time.time()
     mode = 'QUICK SUBSET' if QUICK else 'FULL RUN'
@@ -443,7 +406,7 @@ def main():
     print(f"\nSaved {OUT_CSV}  ({len(df)} runs, {skipped} skipped by guards, "
           f"{mins:.0f} min)")
 
-    # -------- defect 3 check: are fractions actually matched now?
+    #  defect 3 check: are fractions actually matched now?
     print('\n' + '=' * 84)
     print('  CHECK: achieved missing fraction by condition '
           '(these must now agree)')
@@ -454,7 +417,7 @@ def main():
     print(df.groupby(['missing_frac', 'condition'])['mean_gap_len']
             .median().round(1).to_string())
 
-    # -------- mechanism check: is the persistence baseline handicapped?
+    # mechanism check: is the persistence baseline handicapped?
     print('\n' + '=' * 84)
     print('  CHECK: the mechanism. Naive evaluation should HANDICAP the')
     print('  persistence baseline by feeding it stale observations, so')
@@ -488,7 +451,7 @@ def main():
           f"{df.skill_honest.max():.1f}   "
           f"(runs below -100: {(df.skill_honest < -100).sum()})")
 
-    # -------- the result
+    # the result
     order = list(CONDITIONS.keys())
     print('\n' + '=' * 84)
     print('  MEAN BIAS BY CONDITION, WITH BOOTSTRAP 95% CI')

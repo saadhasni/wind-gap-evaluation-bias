@@ -37,7 +37,7 @@ def naive_features(series):
     return f
 
 
-# ---------------------------------------------------------------- part (a)
+# part (a)
 def describe(name, series, step):
     d = series.index.to_series().diff()
     gaps = d[d > step]
@@ -65,7 +65,7 @@ def describe(name, series, step):
         gap_max=str(gaps.max()) if len(gaps) else '-')
 
 
-# ---------------------------------------------------------------- part (b)
+# part (b)
 def target_staleness(series, step, H):
     """For each row p, how much MORE time than H*step separates row p from
     row p+H. Zero means the target really is H steps ahead. A positive value

@@ -1,21 +1,3 @@
-"""
-=============================================================================
-  add_statistics.py — compute significance tests for the artifact study
-=============================================================================
-  Produces, for every dataset and horizon:
-    * Diebold-Mariano test, honest XGBoost vs honest persistence
-    * Diebold-Mariano test, naive  XGBoost vs naive  persistence
-    * Circular block-bootstrap 95% CI on the BIAS itself (naive - honest skill)
-
-  The bias CI is the important one: it is what tells a reviewer whether the
-  reported bias is distinguishable from zero.
-
-  Place beside final_pipeline.py, dataset_adapters.py and run_artifact_study.py
-  with the same data folders, then:      python add_statistics.py
-
-  Output: artifact_statistics.csv
-=============================================================================
-"""
 import warnings, os, sys, glob
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'

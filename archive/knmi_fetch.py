@@ -4,8 +4,7 @@ import time
 import json
 import requests
 
-# anonymous key from https://developer.dataplatform.knmi.nl/open-data-api
-# valid until 1 August 2027
+
 API_KEY = ("eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjUzYTg1ZDBhMm"
            "Q5YzRkYzJiYWNlNzQ4NTQ2Zjk4ODExIiwiaCI6Im11cm11cjEyOCJ9")
 
@@ -120,10 +119,10 @@ def download_one(filename, directory="."):
 
 def main():
     # ------------------------------------------------------------------
-    MODE = 'peek'          # 'peek' | 'survey' | 'sample' | 'bulk'
-    PLATFORM = 'BSB'       # BSA BSB HKZA HKZB HKN HKWA HKWB
-    START = '20210101'     # bulk only, YYYYMMDD, inclusive
-    END = '20210301'       # bulk only, YYYYMMDD, inclusive
+    MODE = 'peek'          
+    PLATFORM = 'BSB'     
+    START = '20210101'   
+    END = '20210301'       
     # ------------------------------------------------------------------
 
     if MODE == 'peek':
@@ -146,8 +145,7 @@ def main():
     matches = {}
     print("\nFiles per platform:")
     for c in codes:
-        # match the code as a delimited token first, so HKN does not also
-        # sweep up HKNxx; fall back to a loose substring match if that fails
+      
         hits = [n for n in names
                 if c.lower() in n.lower().replace('.', '_').split('_')]
         if not hits:

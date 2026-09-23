@@ -19,7 +19,7 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
-# ---------------- config ----------------
+# config 
 TRAIN_RATIO = 0.75
 SEED        = 42
 RUN_LSTM    = True     # set False for a fast run without the neural network
@@ -38,7 +38,6 @@ MODELS_FAST = {
 
 
 def naive_features(series):
-    """Gap-ignoring feature construction (common practice)."""
     f = pd.DataFrame(index=series.index)
     f['lag_0'] = series
     for lag in (1, 2, 3, 5, 10, 30, 60):
@@ -73,7 +72,6 @@ def fit_predict_tabular(name, Xtr, ytr, Xte):
 
 
 def fit_predict_lstm(seq_len, series, tr_pos, te_pos, H, fit_end_pos):
-    """LSTM on raw scaled sequences. tr_pos/te_pos are POSITIONS in `series`."""
     import tensorflow as tf
     tf.get_logger().setLevel('ERROR')
     from tensorflow.keras.models import Sequential
@@ -117,13 +115,13 @@ def run_dataset(name, series, step, seq_len, horizons, out):
         if len(te) < 300:
             continue
 
-        # ---- honest (A): gap-aware features, gap-aware rows ----
+        # honest (A): gap-aware features, gap-aware rows
         y_te_A = series.values[te + H]
         pers_A = fgap.iloc[te]['lag_0'].values
         Xtr_A, Xte_A = fgap.iloc[tr][gcols].values, fgap.iloc[te][gcols].values
         ytr_A = series.values[tr + H]
 
-        # ---- naive (C): naive features, naive rows ----
+        # naive (C): naive features, naive rows
         dn = fnav.copy()
         dn['target'] = series.shift(-H)
         dn = dn.dropna()

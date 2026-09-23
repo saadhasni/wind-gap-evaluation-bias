@@ -1,24 +1,3 @@
-"""
-=============================================================================
-  run_artifact_study.py — Evaluation-artifact experiment
-=============================================================================
-  Quantifies how much reported forecast skill changes when gappy wind data
-  is handled naively (the common practice) versus gap-aware (correct).
-
-  Three configurations per dataset and horizon:
-    A  honest    : gap-aware features, gap-aware valid rows
-    B  features  : naive features, SAME gap-aware rows
-                   -> isolates the FEATURE-CONTAMINATION effect
-    C  naive     : naive features, naive rows (what a naive study reports)
-                   -> C - B isolates the EVALUATION-SET COMPOSITION effect
-
-  Reports the decomposition so the mechanism is explicit, not asserted.
-
-  Requires: final_pipeline.py, dataset_adapters.py in the same folder.
-  Run:      python run_artifact_study.py
-  Outputs:  artifact_results.csv, artifact_fig.png
-=============================================================================
-"""
 import warnings, os, sys, glob
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -42,9 +21,6 @@ TRAIN_RATIO = 0.75
 
 
 def naive_features(series):
-    """Feature construction that IGNORES gaps — the common practice.
-    Lags and rolling windows are taken by row position, so a window may
-    silently span a multi-day outage."""
     f = pd.DataFrame(index=series.index)
     f['lag_0'] = series
     for lag in (1, 2, 3, 5, 10, 30, 60):

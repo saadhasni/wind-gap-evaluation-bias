@@ -57,8 +57,7 @@ def longest_contiguous(series, step):
 
 
 def inject_gaps(series, n_gaps, gap_len, seed, margin=200):
-    """Delete n_gaps blocks of gap_len samples, non-overlapping, away from
-    the edges. Returns the punctured series (index preserved, so real gaps)."""
+    
     rng = np.random.default_rng(seed)
     n = len(series)
     forbidden = np.zeros(n, dtype=bool)
@@ -81,8 +80,8 @@ def inject_gaps(series, n_gaps, gap_len, seed, margin=200):
 
 
 def evaluate(series, H):
-    """Return (honest_skill, naive_skill) on the given (possibly gappy) series."""
-    # ---- honest: gap-aware
+
+    # honest: gap-aware
     fg = FP.build_features_segmented(series, STEP)
     gc = [c for c in fg.columns if c != '_seg']
     mask = FP.valid_rows_for_horizon(series, fg, H, SEQ_LEN)
@@ -102,7 +101,7 @@ def evaluate(series, H):
     ra = np.sqrt(mean_squared_error(y_te, m.predict(fg.iloc[te][gc].values)))
     sk_honest = 100 * (1 - ra / rp)
 
-    # ---- naive: gap-ignoring
+    # naive: gap-ignoring
     fn = naive_features(series)
     dn = fn.copy()
     dn['target'] = series.shift(-H)

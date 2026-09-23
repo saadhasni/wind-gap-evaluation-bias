@@ -16,7 +16,7 @@ import final_pipeline as FP
 from dataset_adapters import load_wfip3_buoy
 from knmi_adapter import load_knmi_platform, longest_clean_block
 
-# ---------------------------------------------------------------- config
+# config
 XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
            colsample_bytree=0.8, random_state=42, verbosity=0)
 TRAIN_RATIO = 0.75
@@ -44,7 +44,7 @@ MIN_RECORD_LEN = 3000
 OUT_CSV = 'gap_injection_multi_results.csv'
 
 
-# ------------------------------------------------------- unchanged core
+# unchanged core
 def naive_features(series):
     """Gap-ignoring feature construction (common practice)."""
     f = pd.DataFrame(index=series.index)
@@ -123,7 +123,7 @@ def evaluate(series, H):
     return sk_honest, sk_naive, len(te)
 
 
-# ------------------------------------------------------- record loading
+# record loading
 def buoy_longest_contiguous(series, step):
     idx = series.index
     best_s, best_e, best_n, start = 0, len(series), 0, 0
@@ -171,7 +171,7 @@ def prepare_records():
     return out
 
 
-# ------------------------------------------------------------------ run
+#  run
 def main():
     print('Preparing records ...')
     records = prepare_records()
@@ -185,7 +185,7 @@ def main():
         print(f"   {name:<9} {len(s):>6} samples  {len(s) / 144:>5.1f} d   "
               f"{s.index[0]} -> {s.index[-1]}   mean {s.mean():.2f} m/s")
 
-    # ---- pre-flight: reject records that cannot support a skill ratio
+    #  pre-flight: reject records that cannot support a skill ratio
     print('\nPre-flight: honest skill on each intact record '
           f'(must be within +/-{INTACT_SKILL_LIMIT:.0f}%)')
     keep = []
@@ -331,7 +331,7 @@ def main():
                   f"few-long {c.mean():+7.2f}   separation {sep:+7.2f}")
     print(f"\n    separation positive in {consistent}/{len(per_record)} records")
 
-    # ------------------------------------------------------------ figure
+    # figure
     recs = list(per_record.keys())
     fig, axes = plt.subplots(len(HORIZONS), len(recs),
                              figsize=(3.3 * len(recs), 3.6 * len(HORIZONS)),

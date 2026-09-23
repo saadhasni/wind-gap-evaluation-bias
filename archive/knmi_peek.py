@@ -1,15 +1,5 @@
-"""
-knmi_peek.py — ONE request to the KNMI Open Data API.
-
-Prints the first 25 filenames of the windlidar 10-minute dataset so we can
-see the naming convention. Downloads nothing. Pages nothing.
-
-Run:  python knmi_peek.py
-"""
 import requests
 
-# KNMI's public anonymous key, valid until 1 August 2027
-# https://developer.dataplatform.knmi.nl/open-data-api
 API_KEY = ("eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjUzYTg1ZDBhMm"
            "Q5YzRkYzJiYWNlNzQ4NTQ2Zjk4ODExIiwiaCI6Im11cm11cjEyOCJ9")
 
@@ -38,4 +28,4 @@ print(f"{len(files)} filenames returned:\n")
 for f in files:
     print(f"   {f['filename']}    {f.get('size', 0) / 1024:.0f} KB")
 
-print("\nCopy the list above into the chat.")
+print("\nDone")

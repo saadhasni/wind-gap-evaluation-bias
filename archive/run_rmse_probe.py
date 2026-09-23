@@ -22,8 +22,6 @@ HORIZONS = (1, 3)
 MISSING_FRACS = (0.05, 0.10, 0.20)
 SEEDS = tuple(range(15))
 
-# The flat record and the unstable one. Add the others to reproduce
-# the full sweep with RMSE instrumentation.
 RECORDS = [('HKWA', 'knmi_hkwa'), ('HKWB', 'knmi_hkwb')]
 BUOY_DIR = 'buoy_data'
 
@@ -68,7 +66,6 @@ def naive_features(series):
 
 
 def evaluate_instrumented(series, H):
-    """Same computation as evaluate(), but returns every component."""
     fg = FP.build_features_segmented(series, STEP)
     gc_cols = [c for c in fg.columns if c != '_seg']
     mask = FP.valid_rows_for_horizon(series, fg, H, SEQ_LEN)

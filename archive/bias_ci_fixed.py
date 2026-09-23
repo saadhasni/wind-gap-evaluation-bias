@@ -1,81 +1,3 @@
-"""
-=============================================================================
-  bias_ci_fixed.py — corrected block bootstrap for the gap-handling bias
-=============================================================================
-  Drop-in replacement for bias_ci() in run_artifact_aligned.py
-  (and for the identical function in add_statistics.py).
-
-  WHAT WAS WRONG
-
-  The original resampled each arm on its own circular block grid built from
-  row positions:
-
-      ih  = blocks drawn over positions 0..Th-1, wrapped
-      idn = blocks drawn over positions 0..Tn-1, wrapped     <- independent
-
-  Two separate defects.
-
-  (1) BLOCKS SPAN GAPS. A block is `block` consecutive ROWS, and on a
-      fragmented record consecutive rows are not consecutive in time. D3 has
-      1,363 segments with a mean length of 28.8 samples against a block
-      length of 50, so essentially every block straddles at least one
-      outage. The bootstrap therefore assumes the series is contiguous —
-      the assumption this paper exists to reject. It also wraps circularly
-      from the end of the record to the beginning, joining December to
-      January.
-
-  (2) THE TWO ARMS ARE RESAMPLED INDEPENDENTLY. Both arms score the same
-      calendar window and overlap heavily (on D3 the gap-aware rows are a
-      subset of the naive rows), so their skills are strongly positively
-      correlated. Drawing them independently destroys that correlation:
-
-          Var(C - A) = VarC + VarA - 2Cov(C,A)      <- truth
-          Var(C - A) = VarC + VarA                  <- what was computed
-
-      With Cov > 0 the reported intervals are too WIDE. The published
-      intervals are therefore conservative, not anti-conservative, and some
-      results currently reported as "includes zero" may exclude it once
-      this is corrected.
-
-  WHAT THIS DOES INSTEAD
-
-  One set of blocks, shared by both arms, and blocks that never cross a
-  segment boundary:
-
-    * every scored timestamp is assigned a segment id;
-    * inside each segment, rows are cut into consecutive blocks of at most
-      `block` rows, so no block spans an outage and none wraps the record;
-    * each replicate draws block ids with replacement ONCE, then gathers
-      whichever rows of each arm fall inside the drawn blocks, and
-      recomputes both skills from those rows.
-
-  Because the same draw feeds both arms, their covariance is preserved and
-  the interval is on the difference rather than on two unrelated quantities.
-
-  A useful side effect: on the contiguous control D1 the two arms score
-  identical rows, so every replicate returns exactly 0.00 and the interval
-  is [0.00, 0.00]. That is a strictly stronger control than the current
-  [-6.61, +6.33] — the null is exact in the inference as well as in the
-  point estimate.
-
-  HOW TO USE IT
-
-  In run_artifact_aligned.py, replace the whole bias_ci function with this
-  one, and change the call inside run() from
-
-      lo, hi = bias_ci(eh_m, eh_p, en_m, en_p)
-
-  to
-
-      seg_s = pd.Series(seg, index=series.index)
-      lo, hi = bias_ci(eh_m, eh_p, series.index[te],
-                       en_m, en_p, te2.index, seg_s)
-
-  `seg` is already computed at the top of run(). Nothing else changes.
-
-  Runtime is comparable to the original: a few seconds per dataset/horizon.
-=============================================================================
-"""
 import numpy as np
 import pandas as pd
 
@@ -153,9 +75,7 @@ def bias_ci(eh_m, eh_p, idx_h, en_m, en_p, idx_n, seg_series,
     return float(np.percentile(out, 2.5)), float(np.percentile(out, 97.5))
 
 
-# ---------------------------------------------------------------------------
 # Optional: block-length sensitivity, for Appendix B
-# ---------------------------------------------------------------------------
 def bias_ci_sensitivity(eh_m, eh_p, idx_h, en_m, en_p, idx_n, seg_series,
                         blocks=(25, 50, 100), **kw):
     """Return {block_length: (lo, hi)}. Report this rather than a single
@@ -164,9 +84,8 @@ def bias_ci_sensitivity(eh_m, eh_p, idx_h, en_m, en_p, idx_n, seg_series,
                        block=b, **kw) for b in blocks}
 
 
-# ---------------------------------------------------------------------------
+
 # Self-test: synthetic fragmented record, no real data needed
-# ---------------------------------------------------------------------------
 if __name__ == '__main__':
     rng = np.random.default_rng(0)
 
