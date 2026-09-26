@@ -1,0 +1,10 @@
+dataset,model,method,feature,training,composition,total,share_feature,share_training,share_composition
+D1 ZephIR (contiguous),all,mean_abs,0.0,0.0,0.0,0.0,,,
+D1 ZephIR (contiguous),XGBoost,signed_sum,0.0,0.0,0.0,0.0,,,
+D1 ZephIR (contiguous),Ridge,signed_sum,0.0,0.0,0.0,0.0,,,
+D2 WFIP3 Buoy (few long gaps),all,mean_abs,0.0,3.1,0.0,3.1,0.0,100.0,0.0
+D2 WFIP3 Buoy (few long gaps),XGBoost,signed_sum,0.0,-18.15,0.0,-18.15,-0.0,100.0,-0.0
+D2 WFIP3 Buoy (few long gaps),Ridge,signed_sum,0.0,0.35,0.0,0.35,0.0,100.0,0.0
+D3 Onshore (many short gaps),all,mean_abs,0.03,1.82,2.68,4.31,0.7,40.1,59.2
+D3 Onshore (many short gaps),XGBoost,signed_sum,-0.19,10.43,8.86,19.09,-1.0,54.64,46.41
+D3 Onshore (many short gaps),Ridge,signed_sum,0.0,-0.47,7.23,6.75,0.0,-6.96,107.11

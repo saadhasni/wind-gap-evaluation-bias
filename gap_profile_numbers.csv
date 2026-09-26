@@ -1,0 +1,37 @@
+item,key,value,note
+a,D3 composition channel XGBoost H=1 (pp),1.02,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,D3 composition channel XGBoost H=3 (pp),3.62,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,D3 composition channel XGBoost H=6 (pp),4.22,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,Pearson r D3 d=1 ratio (new far) vs XGBoost composition,0.9995505827536292,"n=3, 1 dof"
+a,Pearson r D3 d=1 ratio (legacy far) vs XGBoost composition,0.9997924117642675,"n=3, 1 dof"
+a,D3 composition channel Ridge H=1 (pp),0.89,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,D3 composition channel Ridge H=3 (pp),2.67,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,D3 composition channel Ridge H=6 (pp),3.67,artifact_decomposition.csv (mtime 2026-09-26 23:24)
+a,Pearson r D3 d=1 ratio (new far) vs Ridge composition,0.987899276745201,"n=3, 1 dof"
+a,Pearson r D3 d=1 ratio (legacy far) vs Ridge composition,0.9788398720058202,"n=3, 1 dof"
+b,Pearson PartB(clean) vs H=1 d=1 ratio (new far) r,-0.19743851999819784,n=8 records
+b,Pearson PartB(clean) vs H=1 d=1 ratio (new far) p,0.639310942989504,n=8 records
+b,Pearson PartB(clean) vs H=1 d=1 ratio (legacy far) r,-0.19424077397184178,n=8 records
+b,Pearson PartB(clean) vs H=1 d=1 ratio (legacy far) p,0.6448556134907264,n=8 records
+b,Pearson PartB(legacy) vs H=1 d=1 ratio (new far) r,0.12243011997807178,n=8 records
+b,Pearson PartB(legacy) vs H=1 d=1 ratio (new far) p,0.7727271118451082,n=8 records
+b,Pearson PartB(legacy) vs H=1 d=1 ratio (legacy far) r,0.12519259838841434,n=8 records
+b,Pearson PartB(legacy) vs H=1 d=1 ratio (legacy far) p,0.7677050542019056,n=8 records
+c,D3 H=1 displaced rows n,997.0,
+c,D3 H=1 displaced rows % of scored origins,3.0571568747700235,
+c,D3 H=1 persistence RMSE displaced,1.561820460055619,
+c,D3 H=1 persistence RMSE not displaced,0.6677277853900787,"paper ""0.668"" is this"
+c,D3 H=1 persistence RMSE all rows,0.7119005942904599,
+c,D3 H=1 penalty displaced/not displaced,2.339007742718422,
+c,D3 H=3 displaced rows n,2470.0,
+c,D3 H=3 displaced rows % of scored origins,7.574363692118982,
+c,D3 H=3 persistence RMSE displaced,1.8195712557236856,
+c,D3 H=3 persistence RMSE not displaced,1.0424613423521307,
+c,D3 H=3 persistence RMSE all rows,1.1203517868694695,
+c,D3 H=3 penalty displaced/not displaced,1.745456816286485,
+c,D3 H=6 displaced rows n,4228.0,
+c,D3 H=6 displaced rows % of scored origins,12.966143277723258,
+c,D3 H=6 persistence RMSE displaced,1.9855121125546504,
+c,D3 H=6 persistence RMSE not displaced,1.3400637573842624,
+c,D3 H=6 persistence RMSE all rows,1.44016926620924,
+c,D3 H=6 penalty displaced/not displaced,1.4816549597836084,

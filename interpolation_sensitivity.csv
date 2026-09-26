@@ -1,0 +1,13 @@
+interpolate,dataset,segments,n_series,horizon,skill_honest,skill_naive,bias_total,bias_ci_low,bias_ci_high,ci_excludes_zero,dm_p_honest,dm_p_naive,n_test_honest,n_test_naive,n_train_honest,n_train_naive
+True,D1 ZephIR (contiguous),1,8639,1,1.02,1.02,0.0,0.0,0.0,False,0.559,0.559,2084,2084,6433,6433
+True,D1 ZephIR (contiguous),1,8639,10,-7.88,-7.88,0.0,0.0,0.0,False,0.0206,0.0206,2073,2073,6426,6426
+True,D1 ZephIR (contiguous),1,8639,30,-16.1,-16.1,0.0,0.0,0.0,False,0.0126,0.0126,2048,2048,6411,6411
+False,D1 ZephIR (contiguous),5,8635,1,0.2,1.04,0.83,-0.56,2.47,False,0.916,0.556,2022,2083,6247,6430
+False,D1 ZephIR (contiguous),5,8635,10,-9.45,-8.74,0.71,-3.1,4.98,False,0.00955,0.0131,2002,2072,6213,6423
+False,D1 ZephIR (contiguous),5,8635,30,-14.55,-17.34,-2.78,-6.52,0.99,False,0.0233,0.0126,1957,2047,6138,6408
+True,D2 WFIP3 Buoy (few long gaps),24,21790,1,-2.36,-8.6,-6.24,-17.7,0.03,False,0.0015,0.0399,5124,5124,15480,16568
+True,D2 WFIP3 Buoy (few long gaps),24,21790,3,-3.05,-10.91,-7.86,-21.15,-0.06,True,0.00791,0.0377,5113,5113,15453,16575
+True,D2 WFIP3 Buoy (few long gaps),24,21790,6,-1.51,-5.56,-4.05,-11.12,0.01,False,0.54,0.0661,5096,5096,15413,16586
+False,D2 WFIP3 Buoy (few long gaps),86,21696,1,-2.07,-10.45,-8.38,-22.09,0.05,False,0.0154,0.0672,4775,4958,14433,16640
+False,D2 WFIP3 Buoy (few long gaps),86,21696,3,-2.42,-13.01,-10.59,-26.19,-0.3,True,0.0529,0.0492,4757,4946,14387,16648
+False,D2 WFIP3 Buoy (few long gaps),86,21696,6,-2.32,-4.53,-2.22,-9.44,2.09,False,0.263,0.146,4731,4929,14317,16659

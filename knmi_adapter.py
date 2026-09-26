@@ -1,5 +1,6 @@
 import os
 import glob
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -17,6 +18,8 @@ DEFAULT_HEIGHT = 38
 SENTINEL_MIN = 100.0
 
 
+# Documentation only, not used anywhere. Measurement heights in the CSVs are
+# relative to the lidar window (1.0 m above the platform deck), not to MSL/LAT.
 PLATFORM_OFFSET_M = {
     "BSA": 45, "BSB": 45, "HKZA": 45, "HKZB": 45,
     "HKN": 43, "HKWA": 43, "HKWB": 43,
@@ -31,7 +34,12 @@ def load_knmi_day(path, height=DEFAULT_HEIGHT, min_packets=None):
     if speed_col not in df.columns:
         raise KeyError(f"{speed_col!r} not present. Heights here: {HEIGHTS}")
 
-    ts = pd.to_datetime(df["Time and Date"], dayfirst=True, errors="coerce")
+    ts = pd.to_datetime(df["Time and Date"], format="%d/%m/%Y %H:%M:%S",
+                        errors="coerce")
+    n_nat = int(ts.isna().sum())
+    if n_nat:
+        warnings.warn(f"{os.path.basename(path)}: {n_nat} timestamp(s) "
+                      f"could not be parsed and were dropped")
     v = pd.to_numeric(df[speed_col], errors="coerce")
 
     n_sentinel = int(((v >= SENTINEL_MIN) | (v < 0)).sum())
@@ -45,6 +53,9 @@ def load_knmi_day(path, height=DEFAULT_HEIGHT, min_packets=None):
             bad = (pk < min_packets) & v.notna()
             n_packets = int(bad.sum())
             v = v.mask(bad)
+        else:
+            warnings.warn(f"{os.path.basename(path)}: {pcol!r} missing, "
+                          f"packet filter not applied to this file")
 
     out = pd.DataFrame({"wind_speed": v.values}, index=ts)
     out = out[out.index.notna()]
@@ -93,8 +104,8 @@ def gap_report(df, col="wind_speed", step_min=10):
 
 
 def load_knmi_platform(folder, height=DEFAULT_HEIGHT, min_packets=None,
-                       verbose=True):
-    """Concatenate a folder of daily CSVs onto a strict 10-minute grid."""
+                       verbose=True, step_min=10):
+    """Concatenate a folder of daily CSVs onto a strict step_min grid."""
 
     seen, files = set(), []
     for pattern in ("*.CSV", "*.csv"):
@@ -120,21 +131,37 @@ def load_knmi_platform(folder, height=DEFAULT_HEIGHT, min_packets=None,
     if not frames:
         raise RuntimeError(f"Every file in {folder} failed to parse")
 
-    df = pd.concat(frames).sort_index()
-    df = df[~df.index.duplicated(keep="first")]
+    df = pd.concat(frames)
 
-    grid = pd.date_range(df.index.min(), df.index.max(), freq="10min")
+    # Snap to the grid before de-duplicating, otherwise off-grid stamps are
+    # silently lost by the reindex below.
+    freq = f"{step_min}min"
+    snapped = df.index.round(freq)
+    on_grid = float((snapped == df.index).mean()) if len(df) else 1.0
+    if on_grid < 0.99:
+        warnings.warn(f"{folder}: only {100 * on_grid:.2f}% of timestamps "
+                      f"lie on the {freq} grid; rounded to nearest")
+    df.index = snapped
+
+    # Stable sort by time, valid values first, so a duplicate keeps a
+    # measurement rather than a NaN.
+    df = df.assign(_nan=df["wind_speed"].isna().values)
+    df = df.sort_values(["_nan"], kind="mergesort")
+    df = df.sort_index(kind="mergesort")
+    df = df[~df.index.duplicated(keep="first")].drop(columns="_nan")
+
+    grid = pd.date_range(df.index.min(), df.index.max(), freq=freq)
     df = df.reindex(grid)
     df.index.name = "timestamp"
 
     if verbose:
-        r = gap_report(df)
+        r = gap_report(df, step_min=step_min)
         name = os.path.basename(os.path.normpath(folder))
         print(f"\n{name}  (height {height} m)")
         print(f"  files              {len(files)}")
         print(f"  span               {r['intervals']} intervals, "
-              f"{r['intervals'] / 144:.1f} days")
-        print(f"  fill values (9999) {sent} masked")
+              f"{r['intervals'] * step_min / 1440:.1f} days")
+        print(f"  fill/negative vals {sent} masked (>= {SENTINEL_MIN:g} or < 0)")
         if min_packets is not None:
             print(f"  low packet count   {packs} masked "
                   f"(< {min_packets} packets)")

@@ -11,9 +11,8 @@ knmi_hkzb/
 knmi_hkwa/
 knmi_hkwb/
 knmi_hkn/
-ZephIR_windlidar_*.csv
+ZephIR_windlidar_*.[Cc][Ss][Vv]
 onshore_wind.xlsx
 Wind Time Series Dataset*.xlsx
 gap_profile_rows.csv
-Wind Time Series Dataset*.xlsx
 Wind Time Series Dataset*.csv

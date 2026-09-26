@@ -1,11 +1,9 @@
-import warnings, os, sys, glob
+import warnings, os, sys
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import numpy as np
 import pandas as pd
-from scipy import stats
-from sklearn.metrics import mean_squared_error
 from xgboost import XGBRegressor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -19,36 +17,40 @@ TRAIN_RATIO = 0.75
 N_BOOT = 2000
 BLOCK = 50
 SEED = 42
-OUT_CSV = 'artifact_aligned.csv'
+OUT_CSV = os.path.join(HERE, 'artifact_aligned.csv')
 
 
-def naive_features(series):
-    f = pd.DataFrame(index=series.index)
-    f['lag_0'] = series
-    for lag in (1, 2, 3, 5, 10, 30, 60):
-        f[f'lag_{lag}'] = series.shift(lag)
-    for w in (5, 15, 60):
-        f[f'roll_mean_{w}'] = series.rolling(w).mean()
-        f[f'roll_std_{w}'] = series.rolling(w).std()
-    f['wind_shear'] = series.diff()
-    f['turbulence'] = series.rolling(30).std() / (series.rolling(30).mean() + 1e-9)
-    f['kalman'] = FP.kalman_causal(series.values)
-    f['hour_sin'] = np.sin(2 * np.pi * f.index.hour / 24)
-    f['hour_cos'] = np.cos(2 * np.pi * f.index.hour / 24)
-    return f
+def gap_aware_split(series, fgap, H, seq_len):
+    """Gap-aware rows: chronological 75/25 of valid origins with an embargo
+    of seq_len + H valid rows. Returns (valid rows, train rows, test rows)
+    as integer positions, or None if too few rows."""
+    mask = FP.valid_rows_for_horizon(series, fgap, H, seq_len)
+    rows = np.where(mask)[0]
+    if len(rows) < 800:
+        return None
+    split = int(len(rows) * TRAIN_RATIO)
+    tr, te = rows[:split], rows[split + seq_len + H:]
+    if len(te) < 300:
+        return None
+    return rows, tr, te
 
 
-def diebold_mariano(e1, e2, lmax=10):
-    d = np.asarray(e1) ** 2 - np.asarray(e2) ** 2
-    T = len(d)
-    mu = d.mean()
-    v = np.var(d, ddof=1)
-    for L in range(1, lmax + 1):
-        if L < T:
-            v += 2 * (1 - L / (lmax + 1)) * np.cov(d[:-L], d[L:])[0, 1]
-    v = max(v, 1e-12)
-    dm = mu / np.sqrt(v / T)
-    return float(dm), float(2 * (1 - stats.norm.cdf(abs(dm))))
+def naive_aligned_split(series, H, tr, te, fnav=None):
+    """Naive arm on the gap-aware arm's calendar: train on naive origins up
+    to the last gap-aware training origin whose target precedes the test
+    window (same protection as the embargo), test on every naive origin in
+    the gap-aware test window. Returns (train frame, test frame, feature
+    columns)."""
+    dn = FP.naive_frame(series, H, fnav)
+    test_start, test_end = series.index[te[0]], series.index[te[-1]]
+    tr2, te2 = FP.naive_calendar_split(dn, series.index[tr[-1]],
+                                       test_start, test_end)
+    # every gap-valid origin is also a naive origin, so C covers A's window
+    assert te2.index[0] == test_start and te2.index[-1] == test_end, \
+        (te2.index[0], test_start, te2.index[-1], test_end)
+    assert series.index[te].isin(te2.index).all()
+    fc = [c for c in dn.columns if c not in ('target', '_target_ts')]
+    return tr2, te2, fc
 
 
 def skill_from_err(err_model, err_pers):
@@ -58,8 +60,9 @@ def skill_from_err(err_model, err_pers):
 
 
 def _segment_blocks(idx, seg_series, block):
-    """Block id per row of `idx`. Blocks are consecutive runs of at most
-    `block` rows and never cross a segment boundary."""
+    """Block id per row of `idx`: non-overlapping blocks of up to `block`
+    consecutive scored rows, cut at segment boundaries (a block never crosses
+    a gap). Not circular: blocks do not wrap around the end of the window."""
     seg = seg_series.reindex(idx).to_numpy()
     if np.isnan(seg.astype(float)).any():
         raise ValueError("some scored timestamps are absent from the "
@@ -79,6 +82,9 @@ def _segment_blocks(idx, seg_series, block):
 def bias_ci(eh_m, eh_p, idx_h, en_m, en_p, idx_n, seg_series,
             n_boot=2000, block=50, seed=42, min_frac=0.5):
     """Block-bootstrap 95% CI for (naive skill - gap-aware skill).
+    Resamples, with replacement, non-overlapping blocks of up to `block`
+    scored rows cut at segment boundaries (see _segment_blocks), with one
+    shared draw of block ids applied to both arms.
 
     eh_m, eh_p, idx_h : gap-aware model errors, persistence errors, timestamps
     en_m, en_p, idx_n : naive model errors, persistence errors, timestamps
@@ -128,20 +134,18 @@ def run(name, series, step, seq_len, horizons, out):
     seg = FP.segment_ids(series.index, step)
     fgap = FP.build_features_segmented(series, step)
     gcols = [c for c in fgap.columns if c != '_seg']
-    fnav = naive_features(series)
+    fnav = FP.naive_features(series)
     ncols = list(fnav.columns)
     n_seg = int(seg.max() + 1)
+    print(f"  G1 causality check: PASSED "
+          f"({FP.causality_self_check(series, step)} points)")
 
     for H in horizons:
-        mask = FP.valid_rows_for_horizon(series, fgap, H, seq_len)
-        rows = np.where(mask)[0]
-        if len(rows) < 800:
+        sp = gap_aware_split(series, fgap, H, seq_len)
+        if sp is None:
+            print(f"  H={H}: too few gap-valid rows — skipped")
             continue
-        split = int(len(rows) * TRAIN_RATIO)
-        EMB = seq_len + H
-        tr, te = rows[:split], rows[split + EMB:]
-        if len(te) < 300:
-            continue
+        rows, tr, te = sp
 
         # A: honest
         y_te = series.values[te + H]
@@ -151,7 +155,7 @@ def run(name, series, step, seq_len, horizons, out):
         pred_a = m.predict(fgap.iloc[te][gcols].values)
         eh_m, eh_p = y_te - pred_a, y_te - y_now
         sk_a = skill_from_err(eh_m, eh_p)
-        _, p_a = diebold_mariano(eh_m, eh_p)
+        _, p_a = FP.diebold_mariano(eh_m, eh_p, h=H)
 
         # B: naive features, SAME rows
         m = XGBRegressor(**XGB)
@@ -159,35 +163,24 @@ def run(name, series, step, seq_len, horizons, out):
         pred_b = m.predict(fnav.iloc[te][ncols].values)
         sk_b = skill_from_err(y_te - pred_b, eh_p)
 
-        # C: naive features, naive rows, ALIGNED window
-        dn = fnav.copy()
-        dn['target'] = series.shift(-H)
-        dn = dn.dropna()
-        fc = [c for c in dn.columns if c != 'target']
-        s2 = int(len(dn) * TRAIN_RATIO)
-        tr2, te2_all = dn.iloc[:s2], dn.iloc[s2:]
+        # C: naive features, naive rows, calendar split on A's window
+        tr2, te2, fc = naive_aligned_split(series, H, tr, te, fnav)
+        a_start, a_end = series.index[te[0]], series.index[te[-1]]
         m = XGBRegressor(**XGB)
         m.fit(tr2[fc].values, tr2['target'].values)
-
-        a_start, a_end = series.index[te[0]], series.index[te[-1]]
-        te2 = te2_all[(te2_all.index >= a_start) & (te2_all.index <= a_end)]
-        if len(te2) < 300:
-            print(f"  H={H}: aligned naive test too small — skipped")
-            continue
         pred_c = m.predict(te2[fc].values)
         yt2, yn2 = te2['target'].values, te2['lag_0'].values
         en_m, en_p = yt2 - pred_c, yt2 - yn2
         sk_c = skill_from_err(en_m, en_p)
-        _, p_c = diebold_mariano(en_m, en_p)
+        _, p_c = FP.diebold_mariano(en_m, en_p, h=H)
 
         seg_s = pd.Series(seg, index=series.index)
-        lo, hi = bias_ci(eh_m, eh_p, series.index[te], en_m, en_p, te2.index, seg_s)
-        sens = {50: (lo, hi)}
-        for B in (25, 100):
-          sens[B] = bias_ci(eh_m, eh_p, series.index[te],
-                      en_m, en_p, te2.index, seg_s, block=B)
-        print("        block sensitivity   " + "   ".join(
-        f"B={B}: [{sens[B][0]:+.2f}, {sens[B][1]:+.2f}]" for B in (25, 50, 100)))
+        sens = {}
+        for B in (25, BLOCK, 100):
+            sens[B] = bias_ci(eh_m, eh_p, series.index[te], en_m, en_p,
+                              te2.index, seg_s, n_boot=N_BOOT, block=B,
+                              seed=SEED)
+        lo, hi = sens[BLOCK]
         bias = sk_c - sk_a
         excl = (lo > 0) or (hi < 0)
 
@@ -198,7 +191,13 @@ def run(name, series, step, seq_len, horizons, out):
               f"B {sk_b:+6.2f}% | C {sk_c:+6.2f}% (DM p={p_c:.3f})")
         print(f"        bias {bias:+.2f} [{lo:+.2f}, {hi:+.2f}] "
               f"{'excludes 0' if excl else 'includes 0'}   "
-              f"feature {sk_b - sk_a:+.2f}   composition {sk_c - sk_b:+.2f}")
+              f"feature {sk_b - sk_a:+.2f}   "
+              f"training+composition {sk_c - sk_b:+.2f}")
+        print("        block sensitivity   " + "   ".join(
+            f"B={B}: [{sens[B][0]:+.2f}, {sens[B][1]:+.2f}]"
+            for B in (25, BLOCK, 100)))
+        print(f"        train rows A {len(tr)} -> C {len(tr2)}   "
+              f"C test {te2.index[0]} .. {te2.index[-1]} covers A's window")
         print(f"        rows A {len(te)} -> C {len(te2)} "
               f"(x{len(te2)/len(te):.2f})   "
               f"persistence RMSE {rp_h:.3f} -> {rp_n:.3f}")
@@ -207,10 +206,10 @@ def run(name, series, step, seq_len, horizons, out):
             dataset=name, segments=n_seg, horizon=H,
             skill_honest=round(sk_a, 2), skill_naive_features=round(sk_b, 2),
             skill_naive=round(sk_c, 2),
-            dm_p_honest=round(p_a, 4), dm_p_naive=round(p_c, 4),
+            dm_p_honest=float(f'{p_a:.3g}'), dm_p_naive=float(f'{p_c:.3g}'),
             bias_total=round(bias, 2),
             bias_feature=round(sk_b - sk_a, 2),
-            bias_composition=round(sk_c - sk_b, 2),
+            bias_train_plus_comp=round(sk_c - sk_b, 2),
             bias_ci_low=round(lo, 2), bias_ci_high=round(hi, 2),
             ci_low_b25=round(sens[25][0], 2),
             ci_high_b25=round(sens[25][1], 2),
@@ -219,37 +218,44 @@ def run(name, series, step, seq_len, horizons, out):
             ci_excludes_zero=bool(excl),
             sign_flip=bool((sk_a < 0) != (sk_c < 0)),
             n_test_honest=len(te), n_test_naive=len(te2),
+            n_train_honest=len(tr), n_train_naive=len(tr2),
             row_expansion=round(len(te2) / len(te), 2),
             rmse_pers_honest=round(rp_h, 4),
             rmse_pers_naive=round(rp_n, 4),
             test_start=str(a_start), test_end=str(a_end)))
 
 
+DATASETS = (
+    ('D1 ZephIR (contiguous)', pd.Timedelta('1min'), 60, (1, 10, 30)),
+    ('D2 WFIP3 Buoy (few long gaps)', pd.Timedelta('10min'), 36, (1, 3, 6)),
+    ('D3 Onshore (many short gaps)', pd.Timedelta('10min'), 36, (1, 3, 6)),
+)
+
+
+def load_dataset(key, interpolate=True):
+    """Load D1/D2/D3 by prefix. Raises FileNotFoundError if data are absent."""
+    if key == 'D1':
+        return load_zephir(HERE, height_m=38, resample='1min',
+                           interpolate=interpolate)[0]
+    if key == 'D2':
+        return load_wfip3_buoy(os.path.join(HERE, 'buoy_data'), height_m=38,
+                               resample='10min', interpolate=interpolate)[0]
+    return FP.load_onshore(HERE)
+
+
+def run_all(runner, out, **load_kw):
+    for name, step, seq_len, horizons in DATASETS:
+        try:
+            s = load_dataset(name[:2], **load_kw)
+        except FileNotFoundError as e:
+            print(f'[skip {name[:2]}]', e)
+            continue
+        runner(name, s, step, seq_len, horizons, out)
+
+
 if __name__ == '__main__':
     out = []
-    try:
-        s, _ = load_zephir(HERE, height_m=38, resample='1min')
-        run('D1 ZephIR (contiguous)', s, pd.Timedelta('1min'), 60,
-            (1, 10, 30), out)
-    except Exception as e:
-        print('[skip D1]', e)
-    try:
-        s, _ = load_wfip3_buoy(os.path.join(HERE, 'buoy_data'),
-                               height_m=38, resample='10min')
-        run('D2 WFIP3 Buoy (few long gaps)', s, pd.Timedelta('10min'), 36,
-            (1, 3, 6), out)
-    except Exception as e:
-        print('[skip D2]', e)
-    try:
-        f = [x for x in glob.glob(os.path.join(HERE, 'onshore', '*.csv'))
-             if '10min' in x][0]
-        d = pd.read_csv(f); d['Time'] = pd.to_datetime(d['Time'])
-        s = d.set_index('Time')['WindSpeed'].sort_index()
-        s = s[~s.index.duplicated()].where(lambda x: x.between(0, 45)).dropna()
-        run('D3 Onshore (many short gaps)', s, pd.Timedelta('10min'), 36,
-            (1, 3, 6), out)
-    except Exception as e:
-        print('[skip D3]', e)
+    run_all(run, out)
 
     if not out:
         print('No results.'); sys.exit(0)
@@ -258,7 +264,7 @@ if __name__ == '__main__':
     print(f"\nSaved {OUT_CSV}")
 
     print('\n' + '=' * 78)
-    print('  TABLE 4 (aligned windows)')
+    print('  TABLE III (calendar-aligned windows)')
     print('=' * 78)
     cols = ['dataset', 'segments', 'horizon', 'skill_honest', 'skill_naive',
             'bias_total', 'bias_ci_low', 'bias_ci_high', 'ci_excludes_zero',

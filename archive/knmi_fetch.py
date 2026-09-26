@@ -5,8 +5,8 @@ import json
 import requests
 
 
-API_KEY = ("eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjUzYTg1ZDBhMm"
-           "Q5YzRkYzJiYWNlNzQ4NTQ2Zjk4ODExIiwiaCI6Im11cm11cjEyOCJ9")
+# Set KNMI_API_KEY in the environment (https://developer.dataplatform.knmi.nl/)
+API_KEY = os.environ['KNMI_API_KEY']
 
 BASE = "https://api.dataplatform.knmi.nl/open-data/v1"
 DATASET = "windlidar_nz_wp_platform_10min"

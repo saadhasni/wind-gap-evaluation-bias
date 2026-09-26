@@ -20,7 +20,8 @@ from dataset_adapters import load_wfip3_buoy
 from knmi_adapter import load_knmi_platform, longest_clean_block
 
 # CONFIG
-QUICK = False                # <-- set False for the full run
+# <-- set False for the full run (or run with INJECTION_QUICK=1)
+QUICK = os.environ.get('INJECTION_QUICK', '0') == '1'
 
 STEP = pd.Timedelta('10min')
 SEQ_LEN = 12
@@ -42,7 +43,8 @@ MIN_TRAIN_HONEST = 350
 MIN_TEST_HONEST = 120
 
 XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
-           colsample_bytree=0.8, random_state=42, verbosity=0, n_jobs=4)
+           colsample_bytree=0.8, random_state=42, verbosity=0,
+           n_jobs=int(os.environ.get('INJECTION_NJOBS', 4)))  # threads only
 RIDGE_ALPHA = 1.0
 MODELS = ('XGBoost', 'Ridge')
 
@@ -52,7 +54,14 @@ RECORDS = [('HKZA', 'knmi_hkza'), ('HKWB', 'knmi_hkwb'),
 BUOY_DIR = 'buoy_data'
 
 OUT_CSV = 'gap_injection_v3_results.csv'
-OUT_FIG = 'gap_injection_v3_fig.png'
+OUT_FIG = 'gap_injection_v3_fig.png'          # Ridge (paper Fig. 3)
+OUT_FIG_XGB = 'gap_injection_v3_fig_xgb.png'  # XGBoost
+
+# A run is flagged `reliable` when the honest arm has not collapsed and its
+# persistence denominator is representative of the intact record.
+RELIABLE_MIN_SKILL = -50.0
+RELIABLE_RP_RANGE = (0.7, 1.4)
+OLD_BUOY_BASE = 6120          # interpolated base used for the shipped results
 
 if QUICK:
     RECORDS = RECORDS[:2]
@@ -61,6 +70,11 @@ if QUICK:
     N_REPLICATES = 4
     OUT_CSV = 'gap_injection_v3_QUICK.csv'
     OUT_FIG = 'gap_injection_v3_QUICK.png'
+    OUT_FIG_XGB = 'gap_injection_v3_QUICK_xgb.png'
+
+OUT_CSV = os.path.join(HERE, OUT_CSV)
+OUT_FIG = os.path.join(HERE, OUT_FIG)
+OUT_FIG_XGB = os.path.join(HERE, OUT_FIG_XGB)
 
 
 # gap injection
@@ -185,13 +199,13 @@ def evaluate_arms(gapped, H, bounds, model_name):
     ra_h = np.sqrt(mean_squared_error(y_te, pred))
 
     # naive: gap-ignoring features, every row in window
+    # target is H ROWS ahead, so after a gap a training label can fall inside
+    # the test window; naive_calendar_split drops those training rows.
     fn = naive_features(gapped)
-    dn = fn.copy()
-    dn['target'] = gapped.shift(-H)
-    dn = dn.dropna()
-    fc = [c for c in dn.columns if c != 'target']
-    tr2 = dn[dn.index <= t_train_end]
-    te2 = dn[(dn.index >= t_test_start) & (dn.index <= t_test_end)]
+    dn = FP.naive_frame(gapped, H, fnav=fn)
+    fc = [c for c in dn.columns if c not in ('target', '_target_ts')]
+    tr2, te2 = FP.naive_calendar_split(dn, t_train_end, t_test_start,
+                                       t_test_end)
     if len(tr2) < MIN_TRAIN_HONEST or len(te2) < MIN_TEST_HONEST:
         return None
 
@@ -220,6 +234,19 @@ def evaluate_arms(gapped, H, bounds, model_name):
 
 
 # record loading
+def intact_model_skill(base, H, model_name):
+    """No-gap reference: honest-arm skill on the intact record, per origin."""
+    out = {}
+    for i in range(len(ORIGIN_FRACS)):
+        b = window_bounds(base, H, i)
+        if b is None:
+            continue
+        r = evaluate_arms(base, H, b, model_name)
+        if r is not None:
+            out[i] = r['skill_honest']
+    return out
+
+
 def intact_persistence_rmse(base, H):
     """
     Persistence RMSE on the intact record over the same style of test
@@ -264,8 +291,16 @@ def load_records():
             if not os.path.isdir(bp):
                 print(f"  {name}: {BUOY_DIR} not found, skipping")
                 continue
-            s_all, _ = load_wfip3_buoy(bp, height_m=38, resample='10min')
-            out.append((name, buoy_longest_contiguous(s_all, STEP)))
+            # raw series: the interpolated one would put filled points
+            # inside the base record
+            s_all, _ = load_wfip3_buoy(bp, height_m=38, resample='10min',
+                                       interpolate=False)
+            s = buoy_longest_contiguous(s_all, STEP)
+            print(f"  {name}: longest RAW contiguous block {len(s)} samples "
+                  f"({len(s) / 144:.1f} d), {s.index[0]} -> {s.index[-1]}; "
+                  f"old interpolated base {OLD_BUOY_BASE} samples "
+                  f"({OLD_BUOY_BASE / 144:.1f} d)")
+            out.append((name, s))
             continue
         p = os.path.join(HERE, folder)
         if not os.path.isdir(p):
@@ -289,6 +324,100 @@ def boot_ci(x, n_boot=2000, seed=0):
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
+def boot_ci_cluster(x, groups, n_boot=2000, seed=0):
+    """Percentile bootstrap 95% CI of the mean, resampling whole clusters
+    (here split origins, whose test windows overlap heavily)."""
+    x = np.asarray(x, dtype=float)
+    groups = np.asarray(groups)
+    if len(x) < 3:
+        return np.nan, np.nan
+    ids = np.unique(groups)
+    sums = np.array([x[groups == g].sum() for g in ids])
+    cnts = np.array([(groups == g).sum() for g in ids])
+    rng = np.random.default_rng(seed)
+    pick = rng.integers(0, len(ids), size=(n_boot, len(ids)))
+    means = sums[pick].sum(axis=1) / cnts[pick].sum(axis=1)
+    return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
+
+
+def make_figure(df, model_name, path):
+    """Grouped bars of mean bias, one panel per record x horizon. Each bar is
+    labelled with n (surviving placements); cells with < 3 are 'n/a'."""
+    order = list(CONDITIONS.keys())
+    recs = list(df.record.unique())
+    fig, axes = plt.subplots(len(HORIZONS), len(recs),
+                             figsize=(3.4 * len(recs), 3.6 * len(HORIZONS)),
+                             squeeze=False)
+    colours = {'MANY-SHORT': '#1D9E75', 'MEDIUM': '#4A7BB7',
+               'FEW-LONG': '#D85A30'}
+    sub = df[df.model == model_name]
+    w = 0.27
+    for r_i, H in enumerate(HORIZONS):
+        for c_i, rec in enumerate(recs):
+            ax = axes[r_i][c_i]
+            g = sub[(sub.horizon == H) & (sub.record == rec)]
+            x = np.arange(len(MISSING_FRACS))
+            labels = []
+            for i, c in enumerate(order):
+                means, los, his = [], [], []
+                for j, f in enumerate(MISSING_FRACS):
+                    gv = g[(g.missing_frac == f) & (g.condition == c)]
+                    v = gv['bias']
+                    xb = x[j] + (i - 1) * w
+                    if len(v) < 3:
+                        means.append(np.nan); los.append(0); his.append(0)
+                        labels.append((xb, None, None, len(v)))
+                    else:
+                        lo, hi = boot_ci_cluster(v, gv['origin'])
+                        means.append(v.mean())
+                        los.append(max(0, v.mean() - lo))
+                        his.append(max(0, hi - v.mean()))
+                        labels.append((xb, v.mean(), hi, len(v)))
+                ax.bar(x + (i - 1) * w, means, w,
+                       yerr=[los, his], capsize=2,
+                       label=c if (r_i == 0 and c_i == 0) else None,
+                       color=colours[c])
+            ax.axhline(0, color='k', lw=1)
+            lo_y, hi_y = ax.get_ylim()
+            span = hi_y - lo_y
+            for xb, m, hi, n in labels:
+                if m is None:
+                    ax.text(xb, 0.01 * span, 'n/a', ha='center',
+                            va='bottom', fontsize=6,
+                            rotation=90, color='0.4')
+                else:
+                    top = max(m, hi if hi == hi else m, 0)
+                    ax.text(xb, top + 0.01 * span, f'{n}', ha='center',
+                            va='bottom', fontsize=5.5)
+            ax.set_ylim(lo_y, hi_y + 0.08 * span)
+            ax.set_xticks(x)
+            ax.set_xticklabels([f'{f:.0%}' for f in MISSING_FRACS], fontsize=8)
+            ax.tick_params(axis='y', labelsize=7)
+            ax.grid(alpha=0.3, axis='y')
+            if r_i == 0:
+                d = df[df.record == rec]['record_days'].iloc[0]
+                ax.set_title(f'{rec}\n{d:.0f} days', fontsize=9,
+                             fontweight='bold')
+            if c_i == 0:
+                ax.set_ylabel(f'H = {H}\nBias (percentage points)', fontsize=9)
+            if r_i == len(HORIZONS) - 1:
+                ax.set_xlabel('Total missing fraction', fontsize=9)
+    fig.legend(loc='lower center', ncol=3, fontsize=9, frameon=False,
+               bbox_to_anchor=(0.5, -0.01))
+    mlabel = 'ridge regression' if model_name == 'Ridge' else model_name
+    fig.suptitle('Controlled gap injection across independent contiguous '
+                 f'records ({mlabel})', fontsize=11, fontweight='bold',
+                 y=1.03)
+    fig.text(0.5, 0.945, 'bar = mean bias; number = surviving placements n; '
+             'error bar = 95% CI, bootstrap over split origins; n/a = fewer '
+             'than 3 placements survive; y-axes differ by panel',
+             ha='center', fontsize=8)
+    fig.tight_layout(rect=[0, 0.04, 1, 0.92])
+    fig.savefig(path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved {os.path.basename(path)}')
+
+
 # main
 def main():
     t0 = time.time()
@@ -308,23 +437,50 @@ def main():
         print(f"   {name:<9}{len(s):>7} samples{len(s) / 144:>7.1f} d   "
               f"mean {s.mean():>5.2f}   sd_diff {s.diff().std():.3f}")
 
+    for name, s in records:
+        g, _, _ = inject_gaps_exact(s, int(0.05 * len(s)), 3, seed=0)
+        k = FP.causality_self_check(g, STEP)
+        print(f"   {name:<9}G1 causality check (5% many-short example): "
+              f"PASSED ({k} points)")
+
     rows, skipped = [], 0
-    intact_rp = {}
+    intact_rp, intact_sk = {}, {}
     for rec_name, base in records:
         for H in HORIZONS:
             intact_rp[(rec_name, H)] = intact_persistence_rmse(base, H)
-    print('\nIntact-record persistence RMSE (reference denominator):')
-    for (r, H), v in intact_rp.items():
-        print(f"   {r:<9} H={H}   {v:.4f}")
+            for mname in MODELS:
+                intact_sk[(rec_name, H, mname)] = intact_model_skill(
+                    base, H, mname)
+
+    print('\nNO-GAP REFERENCE (intact record, same windows).')
+    print('  rp = intact persistence RMSE (median over origins, the reference')
+    print('  denominator). Model skill = median over origins; a model already')
+    print('  far below zero here is failing on the record, not on the gaps.')
+    print(f"   {'record':<9}{'H':>3}{'rp':>9}"
+          + ''.join(f"{m + ' skill':>16}" for m in MODELS)
+          + '   per-origin skill ' + '/'.join(MODELS))
+    for rec_name, _ in records:
+        for H in HORIZONS:
+            line = f"   {rec_name:<9}{H:>3}{intact_rp[(rec_name, H)]:>9.4f}"
+            per = []
+            for mname in MODELS:
+                d = intact_sk[(rec_name, H, mname)]
+                v = float(np.median(list(d.values()))) if d else np.nan
+                line += f"{v:>16.2f}" if v == v else f"{'n/a':>16}"
+                per.append(' '.join(f"{d[k]:.1f}" for k in sorted(d)))
+            print(line + '   ' + ' | '.join(per))
 
     for rec_name, base in records:
         n = len(base)
         print(f"\n{'=' * 84}")
         print(f"  {rec_name}   {n} samples ({n / 144:.1f} days)")
         print('=' * 84)
+        print('  All numeric columns except n are MEDIANS over the surviving '
+              'placements.')
         print(f"{'frac':>6}{'condition':>12}{'model':>9}{'H':>3}"
               f"{'gaps':>6}{'glen':>6}{'miss%':>7}"
-              f"{'skill_h':>9}{'skill_n':>9}{'bias':>9}{'rmse_bias':>11}{'n':>4}")
+              f"{'med_sk_h':>9}{'med_sk_n':>9}{'med_bias':>9}"
+              f"{'med_rmse_b':>11}{'n':>4}")
         print('-' * 84)
 
         for frac in MISSING_FRACS:
@@ -359,6 +515,19 @@ def main():
                             r['intact_rp'] = round(ref, 4)
                             r['rp_h_over_intact'] = round(
                                 r['rmse_pers_honest'] / ref, 3) if ref else np.nan
+                            sk0 = intact_sk.get((rec_name, H, model_name),
+                                                {}).get(i % N_ORIGINS, np.nan)
+                            r['intact_skill'] = round(sk0, 3) \
+                                if sk0 == sk0 else np.nan
+                            # the gaps' effect on the honest arm, as opposed
+                            # to the model's baseline skill on this window
+                            r['honest_vs_intact'] = round(
+                                r['skill_honest'] - sk0, 3) \
+                                if sk0 == sk0 else np.nan
+                            r['reliable'] = bool(
+                                r['skill_honest'] > RELIABLE_MIN_SKILL and
+                                RELIABLE_RP_RANGE[0] <= r['rp_h_over_intact']
+                                <= RELIABLE_RP_RANGE[1])
                             rows.append(r)
                             acc.append(r)
                         if acc:
@@ -379,7 +548,7 @@ def main():
                         gc.collect()
         if rows:
             pd.DataFrame(rows).to_csv(OUT_CSV, index=False)
-            print(f"  [checkpoint: {OUT_CSV}]")
+            print(f"  [checkpoint: {os.path.basename(OUT_CSV)}]")
 
     if not rows:
         print('\nNo results produced.')
@@ -388,7 +557,7 @@ def main():
     df = pd.DataFrame(rows)
     df.to_csv(OUT_CSV, index=False)
     mins = (time.time() - t0) / 60
-    print(f"\nSaved {OUT_CSV}  ({len(df)} runs, {skipped} skipped by guards, "
+    print(f"\nSaved {os.path.basename(OUT_CSV)}  ({len(df)} runs, {skipped} skipped by guards, "
           f"{mins:.0f} min)")
 
     # -------- defect 3 check: are fractions actually matched now?
@@ -472,6 +641,50 @@ def main():
                           + ''.join(cells) + f"   {verdict}")
     print(f"\n  MONOTONIC IN {mono_ok}/{mono_tot} COMPLETE COMPARISONS")
 
+    print('\n' + '=' * 84)
+    print('  MODEL RELIABILITY. A model whose intact (no-gap) skill is far')
+    print('  below zero, or whose honest arm collapses, cannot support a')
+    print('  skill-ratio comparison.')
+    print(f"  Rule: reliable = skill_honest > {RELIABLE_MIN_SKILL:.0f}% AND "
+          f"{RELIABLE_RP_RANGE[0]} <= rp_h_over_intact <= "
+          f"{RELIABLE_RP_RANGE[1]}")
+    print('=' * 84)
+    print(f"{'model':>9}{'runs':>6}{'med intact sk':>15}{'med honest sk':>15}"
+          f"{'bias sd':>9}{'|bias|>50':>10}{'sk_h<-100':>10}"
+          f"{'rp out':>8}{'reliable':>9}")
+    for mname in MODELS:
+        g = df[df.model == mname]
+        if not len(g):
+            continue
+        rp_out = ((g.rp_h_over_intact < RELIABLE_RP_RANGE[0]) |
+                  (g.rp_h_over_intact > RELIABLE_RP_RANGE[1])).sum()
+        print(f"{mname:>9}{len(g):>6}{g.intact_skill.median():>15.2f}"
+              f"{g.skill_honest.median():>15.2f}{g.bias.std():>9.2f}"
+              f"{int((g.bias.abs() > 50).sum()):>10}"
+              f"{int((g.skill_honest < -100).sum()):>10}"
+              f"{int(rp_out):>8}{int(g.reliable.sum()):>9}")
+    print('\n  Reliable runs by model x condition (of surviving runs):')
+    print(df.groupby(['model', 'condition'])['reliable']
+            .agg(['sum', 'size']).to_string())
+    print('\n  Monotonicity by model (cell means, >= 3 runs per condition):')
+    for mname in MODELS:
+        ok = tot = 0
+        for rec in df.record.unique():
+            for frac in MISSING_FRACS:
+                for H in HORIZONS:
+                    means = []
+                    for c in order:
+                        v = df[(df.record == rec) & (df.model == mname) &
+                               (df.missing_frac == frac) &
+                               (df.horizon == H) &
+                               (df.condition == c)]['bias']
+                        means.append(v.mean() if len(v) >= 3 else np.nan)
+                    if any(m != m for m in means):
+                        continue
+                    tot += 1
+                    ok += int(means[0] >= means[1] >= means[2])
+        print(f"    {mname:<9} {ok}/{tot}")
+
     print('\n  Variance attributable to split origin (bias sd within vs '
           'across origins):')
     for rec in df.record.unique():
@@ -483,55 +696,10 @@ def main():
         print(f"    {rec:<9} within-origin sd {within:6.2f}   "
               f"overall sd {overall:6.2f}")
 
-    # figure
-    recs = list(df.record.unique())
-    fig, axes = plt.subplots(len(HORIZONS), len(recs),
-                             figsize=(3.4 * len(recs), 3.6 * len(HORIZONS)),
-                             squeeze=False, sharey='row')
-    colours = {'MANY-SHORT': '#1D9E75', 'MEDIUM': '#4A7BB7',
-               'FEW-LONG': '#D85A30'}
-    sub = df[df.model == 'XGBoost']
-    for r_i, H in enumerate(HORIZONS):
-        for c_i, rec in enumerate(recs):
-            ax = axes[r_i][c_i]
-            g = sub[(sub.horizon == H) & (sub.record == rec)]
-            x = np.arange(len(MISSING_FRACS))
-            for i, c in enumerate(order):
-                means, los, his = [], [], []
-                for f in MISSING_FRACS:
-                    v = g[(g.missing_frac == f) & (g.condition == c)]['bias']
-                    if len(v) < 3:
-                        means.append(np.nan); los.append(0); his.append(0)
-                    else:
-                        lo, hi = boot_ci(v)
-                        means.append(v.mean())
-                        los.append(max(0, v.mean() - lo))
-                        his.append(max(0, hi - v.mean()))
-                ax.bar(x + (i - 1) * 0.27, means, 0.27,
-                       yerr=[los, his], capsize=2,
-                       label=c if (r_i == 0 and c_i == 0) else None,
-                       color=colours[c])
-            ax.axhline(0, color='k', lw=1)
-            ax.set_xticks(x)
-            ax.set_xticklabels([f'{f:.0%}' for f in MISSING_FRACS], fontsize=8)
-            ax.grid(alpha=0.3, axis='y')
-            if r_i == 0:
-                d = df[df.record == rec]['record_days'].iloc[0]
-                ax.set_title(f'{rec}\n{d:.0f} days', fontsize=9,
-                             fontweight='bold')
-            if c_i == 0:
-                ax.set_ylabel(f'H = {H}\nBias (percentage points)', fontsize=9)
-            if r_i == len(HORIZONS) - 1:
-                ax.set_xlabel('Total missing fraction', fontsize=9)
-    fig.legend(loc='lower center', ncol=3, fontsize=9, frameon=False,
-               bbox_to_anchor=(0.5, -0.01))
-    fig.suptitle('Controlled gap injection across independent contiguous '
-                 'records (XGBoost; error bars are bootstrap 95% CI)',
-                 fontsize=11, fontweight='bold')
-    fig.tight_layout(rect=[0, 0.04, 1, 0.93])
-    fig.savefig(OUT_FIG, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f'\nSaved {OUT_FIG}')
+    # figures: Ridge is the paper's Fig. 3; XGBoost kept for reference
+    print()
+    make_figure(df, 'Ridge', OUT_FIG)
+    make_figure(df, 'XGBoost', OUT_FIG_XGB)
     if QUICK:
         print('\nThis was the QUICK subset. If the two CHECK blocks above '
               'look right,\nset QUICK = False and run the full experiment.')
