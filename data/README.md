@@ -78,8 +78,8 @@ to the repository root (the folder containing the scripts).
   | HKZB | 2024-12-12 | 2025-05-10 | 973, then 1150 from 2025-03-18 |
 
   The HKZB record contains a lidar unit change on 2025-03-18 (that day's file has only 11
-  rows). Per-record spans, missing fractions and segment counts (supplementary Table S1) are
-  produced by `make_knmi_table.py`.
+  rows). Per-record spans, missing fractions and segment counts are produced by
+  `make_knmi_table.py` (`knmi_record_statistics.csv`).
 
 ---
 

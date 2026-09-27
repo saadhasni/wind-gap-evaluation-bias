@@ -3,8 +3,8 @@
 Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wind Forecasting
 for Grid Operations" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
 
-This repository reproduces every table, figure, and reported number in the manuscript and its
-supplementary material, starting from the raw public data.
+This repository reproduces every table, figure, and reported number in the manuscript, plus the
+released output it refers to, starting from the raw public data.
 
 ## Setup
 
@@ -50,21 +50,21 @@ takes about 2 hours on the author's Windows machine and should be left running u
 | # | Script | Produces | Runtime |
 |---|---|---|---|
 | 1 | `knmi_auto.py` | raw KNMI downloads into `knmi_*/` folders | ~1 hr/platform |
-| 2 | `make_data_section.py` | Table I, Fig. S1 (`fig_data_overview.png`) | minutes |
-| 3 | `make_knmi_table.py` | Table S1 (KNMI record statistics) | minutes |
+| 2 | `make_data_section.py` | Table I, seven-day excerpt (`fig_data_overview.png`) | minutes |
+| 3 | `make_knmi_table.py` | KNMI record statistics (`knmi_record_statistics.csv`) | minutes |
 | 4 | `run_artifact_aligned.py` | **Table III** (main result), block-bootstrap sensitivity | minutes |
-| 5 | `run_artifact_decompose.py` | **Table IV** (channel decomposition), Fig. S2 (`fig_s3_decomposition.png`) | minutes |
+| 5 | `run_artifact_decompose.py` | **Table IV** (channel decomposition), decomposition figure (`fig_s3_decomposition.png`) | minutes |
 | 6 | `run_artifact_audit.py` | Section III-D (calendar-alignment audit) | minutes |
-| 7 | `run_model_generalisation_aligned.py` | **Table V**, Table S3 (LSTM on D2/D3) | ~20 min (LSTM is slow) |
+| 7 | `run_model_generalisation_aligned.py` | **Table V**, LSTM results on D2/D3 (`model_generalisation_aligned.csv`) | ~20 min (LSTM is slow) |
 | 8 | `run_rolling_origin_aligned.py` | **Table VI** | ~15 min |
-| 9 | `run_gap_profile.py` | **Table VII**, Fig. 2 (`gap_profile_fig_paper.png`), Fig. S3 (`gap_context_fig.png`) | ~30 min |
+| 9 | `run_gap_profile.py` | **Table VII**, Fig. 2 (`gap_profile_fig_paper.png`), pre-gap variability test (`gap_context_fig.png`) | ~30 min |
 | — | `run_interpolation_sensitivity.py` | interpolation-policy sensitivity (Section II-A) | minutes |
 | 10 | `run_gap_injection.py` | injection results, Fig. 3 (`gap_injection_v3_fig.png`) | ~2 hours |
 | 11 | `make_injection_summary.py` | **Table VIII** (from the injection CSV) | seconds |
 | 12 | `make_figs_2_3.py` | Fig. 1 (`fig1_configurations.png`) | seconds |
 | 13 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs | seconds |
 
-The feature specification (Table S2) is defined in `final_pipeline.py`. Some scripts also write
+The full feature specification is defined in `final_pipeline.py`. Some scripts also write
 diagnostic figures that do not appear in the paper (for example `fig_s2_skill.png`,
 `model_generalisation_aligned_fig.png`, `rolling_origin_aligned_fig.png`, `gap_profile_fig.png`
 and `gap_injection_v3_fig_xgb.png`).
@@ -84,14 +84,14 @@ statistical calibration): if D1 is not exactly zero, something upstream is broke
 ├── dataset_adapters.py            # D1/D2 loaders
 ├── knmi_adapter.py                # KNMI record loader
 ├── knmi_auto.py                   # KNMI bulk downloader (needs KNMI_API_KEY)
-├── make_data_section.py           # Table I, Fig. S1
-├── make_knmi_table.py             # Table S1 (KNMI records)
+├── make_data_section.py           # Table I, seven-day excerpt
+├── make_knmi_table.py             # KNMI record statistics
 ├── run_artifact_aligned.py        # Table III — corrected block bootstrap lives here
-├── run_artifact_decompose.py      # Table IV, Fig. S2
+├── run_artifact_decompose.py      # Table IV, decomposition figure
 ├── run_artifact_audit.py          # Section III-D
-├── run_model_generalisation_aligned.py   # Table V, Table S3
+├── run_model_generalisation_aligned.py   # Table V, LSTM results
 ├── run_rolling_origin_aligned.py  # Table VI
-├── run_gap_profile.py             # Table VII, Fig. 2, Fig. S3
+├── run_gap_profile.py             # Table VII, Fig. 2, pre-gap test
 ├── run_interpolation_sensitivity.py  # interpolation-policy sensitivity
 ├── run_gap_injection.py           # injection runs, Fig. 3 (long-running)
 ├── make_injection_summary.py      # Table VIII
