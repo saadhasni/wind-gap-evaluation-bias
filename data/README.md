@@ -49,11 +49,9 @@ to the repository root (the folder containing the scripts).
 ## D3 — Onshore turbine anemometer (many short gaps)
 
 - **Source:** Y. Ding, "Wind Time Series Dataset," Zenodo, 2021
-- **DOI:** 10.5281/zenodo.5516539
 - **License:** CC-BY-4.0
 - **File used:** `Wind Time Series Dataset(10min).csv`, 2014-10-07 01:20 to 2015-10-06 23:50
   (39,195 rows, 10-minute). The hourly file in the same record is not used.
-- **How to get it:** https://doi.org/10.5281/zenodo.5516539
 - **Where it goes:** `onshore/` (exactly one `*10min*.csv` file).
 
 ## Additional records (six KNMI platforms, for replication and injection)
@@ -90,12 +88,6 @@ value >= 100 m/s or < 0 to `NaN` before processing. Height-specific instrument f
 measurement level can be missing while the instrument's overall status flag reports normal
 operation. `make_knmi_table.py` reports, per record, the number of such bad intervals and the
 longest clean run with and without them (Section II-B of the paper).
-
-## Access dates
-
-Data for this paper was accessed [ADD DATE — e.g. "between August and September 2026"].
-KNMI, DOE and Zenodo archives may add data after this date; the date ranges above are the ones
-used in the paper.
 
 ## Storage note
 
