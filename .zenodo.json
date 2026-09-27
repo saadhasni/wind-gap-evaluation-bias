@@ -1,0 +1,12 @@
+{
+  "title": "wind-gap-evaluation-bias: code for 'Evaluation Bias From Data Gaps in Short-Term Wind Forecasting for Grid Operations'",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {"name": "Hasni, Muhammad Saad", "affiliation": "University of Engineering and Technology Taxila", "orcid": "0009-0009-1520-531X"},
+    {"name": "Khalid, Alishba", "affiliation": "University of Engineering and Technology Taxila", "orcid": "0009-0006-9757-0799"},
+    {"name": "Ayoob, Hamail", "affiliation": "University of Engineering and Technology Taxila", "orcid": "0009-0005-4885-1001"},
+    {"name": "Arslan, Abdullah Ahmad", "affiliation": "COMSATS University Islamabad, Lahore Campus"},
+    {"name": "Khalid, Mamoona", "affiliation": "University of Engineering and Technology Taxila", "orcid": "0000-0002-5966-9951"}
+  ]
+}

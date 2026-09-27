@@ -1,17 +1,17 @@
 # Evaluation Bias From Data Gaps in Short-Term Wind Forecasting for Grid Operations
 
 Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wind Forecasting
-for Grid Operations" (M. S. Hasni, A. Khalid, H. Ayoob, A.A. Arslan, M. Khalid).
+for Grid Operations" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
 
 This repository reproduces every table, figure, and reported number in the manuscript and its
 supplementary material, starting from the raw public data.
-
 
 ## Setup
 
 Requires **Python 3.12** (the pinned xgboost 3.3 needs >= 3.12, TensorFlow 2.17 has no 3.13
 wheels). The paper's numbers were produced on Windows; other platforms and library versions
-can change the last digit of some results.
+can change individual gradient-boosting values by up to about 2.6 percentage points, while the
+structural findings are unchanged (see Section IV-G of the paper).
 
 ```bash
 python -m venv venv
@@ -32,7 +32,7 @@ $env:KNMI_API_KEY = "your-key-here"
 
 ## Getting the data
 
-See `data/README.md` for exact files, dates and folders.
+See `data/README.md` for exact files, dates, folders and licences.
 
 1. D1 (ZephIR, Borssele Alpha, 21–26 Nov 2019): download the six 1-second-product files
    `ZephIR_windlidar_BSA_1s_*.CSV` manually from the KNMI Data Platform and place them in
@@ -50,19 +50,24 @@ takes about 2 hours on the author's Windows machine and should be left running u
 | # | Script | Produces | Runtime |
 |---|---|---|---|
 | 1 | `knmi_auto.py` | raw KNMI downloads into `knmi_*/` folders | ~1 hr/platform |
-| 2 | `make_data_section.py` | Table I, Fig. S1 | minutes |
+| 2 | `make_data_section.py` | Table I, Fig. S1 (`fig_data_overview.png`) | minutes |
 | 3 | `make_knmi_table.py` | Table S1 (KNMI record statistics) | minutes |
 | 4 | `run_artifact_aligned.py` | **Table III** (main result), block-bootstrap sensitivity | minutes |
-| 5 | `run_artifact_decompose.py` | **Table IV** (channel decomposition), Fig. S3 | minutes |
+| 5 | `run_artifact_decompose.py` | **Table IV** (channel decomposition), Fig. S2 (`fig_s3_decomposition.png`) | minutes |
 | 6 | `run_artifact_audit.py` | Section III-D (calendar-alignment audit) | minutes |
-| 7 | `run_model_generalisation_aligned.py` | **Table V**, Table S3 (LSTM on D2/D3), Fig. S4 | ~20 min (LSTM is slow) |
-| 8 | `run_rolling_origin_aligned.py` | **Table VI**, Fig. S5 | ~15 min |
-| 9 | `run_gap_profile.py` | **Table VII**, Fig. 2 (`gap_profile_fig_paper.png`), Fig. S6 | ~30 min |
+| 7 | `run_model_generalisation_aligned.py` | **Table V**, Table S3 (LSTM on D2/D3) | ~20 min (LSTM is slow) |
+| 8 | `run_rolling_origin_aligned.py` | **Table VI** | ~15 min |
+| 9 | `run_gap_profile.py` | **Table VII**, Fig. 2 (`gap_profile_fig_paper.png`), Fig. S3 (`gap_context_fig.png`) | ~30 min |
 | — | `run_interpolation_sensitivity.py` | interpolation-policy sensitivity (Section II-A) | minutes |
-| 10 | `run_gap_injection.py` | injection results, Fig. 3 | ~2 hours |
+| 10 | `run_gap_injection.py` | injection results, Fig. 3 (`gap_injection_v3_fig.png`) | ~2 hours |
 | 11 | `make_injection_summary.py` | **Table VIII** (from the injection CSV) | seconds |
-| 12 | `make_figs_2_3.py` | Fig. 1 (`fig1_configurations.png`), Fig. S2 (`fig_s2_skill.png`) | seconds |
-| 13 | `make_paper_numbers.py` | numbers quoted in the text, collected from the CSVs | seconds |
+| 12 | `make_figs_2_3.py` | Fig. 1 (`fig1_configurations.png`) | seconds |
+| 13 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs | seconds |
+
+The feature specification (Table S2) is defined in `final_pipeline.py`. Some scripts also write
+diagnostic figures that do not appear in the paper (for example `fig_s2_skill.png`,
+`model_generalisation_aligned_fig.png`, `rolling_origin_aligned_fig.png`, `gap_profile_fig.png`
+and `gap_injection_v3_fig_xgb.png`).
 
 `final_pipeline.py`, `dataset_adapters.py`, and `knmi_adapter.py` are shared modules imported
 by the scripts above; they are not run directly.
@@ -82,20 +87,23 @@ statistical calibration): if D1 is not exactly zero, something upstream is broke
 ├── make_data_section.py           # Table I, Fig. S1
 ├── make_knmi_table.py             # Table S1 (KNMI records)
 ├── run_artifact_aligned.py        # Table III — corrected block bootstrap lives here
-├── run_artifact_decompose.py      # Table IV, Fig. S3
+├── run_artifact_decompose.py      # Table IV, Fig. S2
 ├── run_artifact_audit.py          # Section III-D
 ├── run_model_generalisation_aligned.py   # Table V, Table S3
 ├── run_rolling_origin_aligned.py  # Table VI
-├── run_gap_profile.py             # Table VII, Fig. 2, Fig. S6
+├── run_gap_profile.py             # Table VII, Fig. 2, Fig. S3
 ├── run_interpolation_sensitivity.py  # interpolation-policy sensitivity
 ├── run_gap_injection.py           # injection runs, Fig. 3 (long-running)
 ├── make_injection_summary.py      # Table VIII
-├── make_figs_2_3.py               # Fig. 1 and Fig. S2
+├── make_figs_2_3.py               # Fig. 1
 ├── make_paper_numbers.py          # numbers quoted in the text
 ├── *.csv                          # result files, one per script above
-├── *_log.txt                      # console output of each run
+├── paper_numbers.csv              # every number quoted in the text, from this run
+├── injection_summary_report.txt   # full report behind Table VIII
 ├── *.png                          # figures as submitted
-└── archive/                       # superseded scripts, not part of the reproduction path
+├── data/README.md                 # data sources, files and licences
+├── LICENSE                        # MIT (code)
+└── archive/                       # superseded scripts and logs, not part of the reproduction path
 ```
 
 ## A note on the bootstrap
@@ -107,6 +115,10 @@ strongly correlated. An earlier version of this code (kept in `archive/` for the
 resampled on row index and treated the two arms as independent; both defects are described and
 corrected in Section III-E. If you are adapting this code for a different fragmented time series,
 start from the corrected version and read that section first.
+
+## License
+
+Code: MIT (see `LICENSE`). Data: each source keeps its own licence; see `data/README.md`.
 
 ## Contact
 
