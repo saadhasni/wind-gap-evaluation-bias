@@ -1,7 +1,6 @@
-# Evaluation Bias From Data Gaps in Short-Term Wind Forecasting for Grid Operations
+# Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting
 
-Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wind Forecasting
-for Grid Operations" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
+Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
 
 This repository reproduces every table, figure, and reported number in the manuscript, plus the
 released output it refers to, starting from the raw public data.
