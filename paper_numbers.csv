@@ -370,3 +370,43 @@ II-A,D2 no-interpolation H=6 bias [CI] (segments),"-2.22 [-9.44, +2.09] (86)",in
 V-A,dP/dv at D3 mean speed (kW per m/s),247.55,derived
 V-A,"gap-aware persistence RMSE H=6 (m/s), kW, % rated","1.104, 273, 13.7",derived
 V-A,"claimed reduction (m/s), kW, % rated","0.095, 24, 1.2",derived
+4.7,Eq. (1) reproduces the pipeline origin counts exactly,True,exposure_check.csv
+4.7,D1 H=1 exposure % at W=60,0.0,exposure_check.csv
+4.7,D1 H=10 exposure % at W=60,0.0,exposure_check.csv
+4.7,D1 H=30 exposure % at W=60,0.0,exposure_check.csv
+4.7,D2 H=1 exposure % at W=60,5.01,exposure_check.csv
+4.7,D2 H=3 exposure % at W=60,5.16,exposure_check.csv
+4.7,D2 H=6 exposure % at W=60,5.4,exposure_check.csv
+4.7,D3 H=1 exposure % at W=60,64.94,exposure_check.csv
+4.7,D3 H=3 exposure % at W=60,66.01,exposure_check.csv
+4.7,D3 H=6 exposure % at W=60,67.55,exposure_check.csv
+4.8 / Table 9,D3 XGBoost H=1 f / rho_p / rho_m / C-D,0.552 / 1.292 / 1.271 / +1.02,mixture_table.csv
+4.8 / Table 9,D3 Ridge H=1 f / rho_p / rho_m / C-D,0.552 / 1.292 / 1.274 / +0.89,mixture_table.csv
+4.8 / Table 9,D3 XGBoost H=3 f / rho_p / rho_m / C-D,0.564 / 1.300 / 1.229 / +3.62,mixture_table.csv
+4.8 / Table 9,D3 Ridge H=3 f / rho_p / rho_m / C-D,0.564 / 1.300 / 1.248 / +2.67,mixture_table.csv
+4.8 / Table 9,D3 XGBoost H=6 f / rho_p / rho_m / C-D,0.557 / 1.285 / 1.200 / +4.22,mixture_table.csv
+4.8 / Table 9,D3 Ridge H=6 f / rho_p / rho_m / C-D,0.557 / 1.285 / 1.211 / +3.68,mixture_table.csv
+4.9 / Table 10,W=15 H=1 skill A / C / bias [CI] / f%,"+3.61 / +4.55 / +0.93 [-0.27, +2.37] / 21.4",window_depth_sensitivity.csv
+4.9 / Table 10,W=15 H=3 skill A / C / bias [CI] / f%,"+2.83 / +5.87 / +3.05 [+1.62, +4.59] / 23.5",window_depth_sensitivity.csv
+4.9 / Table 10,W=15 H=6 skill A / C / bias [CI] / f%,"+4.84 / +9.70 / +4.86 [+3.09, +6.63] / 26.7",window_depth_sensitivity.csv
+4.9 / Table 10,W=30 H=1 skill A / C / bias [CI] / f%,"+2.96 / +4.73 / +1.78 [+0.10, +3.70] / 35.8",window_depth_sensitivity.csv
+4.9 / Table 10,W=30 H=3 skill A / C / bias [CI] / f%,"+3.32 / +6.31 / +2.99 [+1.22, +5.01] / 37.3",window_depth_sensitivity.csv
+4.9 / Table 10,W=30 H=6 skill A / C / bias [CI] / f%,"+4.57 / +9.34 / +4.77 [+2.42, +6.99] / 39.9",window_depth_sensitivity.csv
+4.9 / Table 10,W=60 H=1 skill A / C / bias [CI] / f%,"+1.17 / +4.99 / +3.81 [+1.51, +6.42] / 55.2",window_depth_sensitivity.csv
+4.9 / Table 10,W=60 H=3 skill A / C / bias [CI] / f%,"-0.53 / +6.15 / +6.68 [+4.05, +9.34] / 56.4",window_depth_sensitivity.csv
+4.9 / Table 10,W=60 H=6 skill A / C / bias [CI] / f%,"+0.00 / +8.60 / +8.60 [+4.56, +12.88] / 55.7",window_depth_sensitivity.csv
+4.9,Spearman correlation of bias with exposure (9 cases),0.72 (p=0.030),window_depth_sensitivity.csv
+4.10,ridge runs with displaced rows,1817,injection_mixture_table.csv
+4.10,"median bias, exposure (0.0, 0.1]",-0.0309,injection_mixture_table.csv
+4.10,"median bias, exposure (0.1, 0.2]",0.0869,injection_mixture_table.csv
+4.10,"median bias, exposure (0.2, 0.3]",0.1397,injection_mixture_table.csv
+4.10,"median bias, exposure (0.3, 0.4]",0.2622,injection_mixture_table.csv
+4.10,"median bias, exposure (0.4, 0.5]",0.3885,injection_mixture_table.csv
+4.10,"median bias, exposure (0.5, 0.6]",0.9494,injection_mixture_table.csv
+4.10,"median bias, exposure (0.6, 0.7]",1.4472,injection_mixture_table.csv
+4.10,"median bias, exposure (0.7, 0.8]",1.9664,injection_mixture_table.csv
+4.10,"median bias, exposure (0.8, 1.0]",3.9874,injection_mixture_table.csv
+4.10,FEW-LONG median f / f_design / rho_p / rho_m / bias,0.088 / 0.054 / 1.221 / 1.231 / -0.031,injection_mixture_table.csv
+4.10,MANY-SHORT median f / f_design / rho_p / rho_m / bias,0.694 / 1.000 / 1.013 / 0.966 / 2.128,injection_mixture_table.csv
+4.10,MEDIUM median f / f_design / rho_p / rho_m / bias,0.338 / 0.380 / 1.055 / 1.037 / 0.244,injection_mixture_table.csv
+4.10,Spearman correlation of f_design with f,0.90,injection_mixture_table.csv

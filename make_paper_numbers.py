@@ -220,6 +220,53 @@ if t3 is not None and t1 is not None:
     add('V-A', 'claimed reduction (m/s), kW, % rated',
         f"{dv:.3f}, {dv * slope:.0f}, {100 * dv * slope / 2000:.1f}", 'derived')
 
+# Sections 3.7 and 4.7 to 4.10: exposure account of the bias
+ex = load('exposure_check.csv')
+if ex is not None:
+    same = bool(((ex.valid_formula == ex.valid_pipeline)
+                 & (ex.naive_formula == ex.naive_pipeline)).all())
+    add('4.7', 'Eq. (1) reproduces the pipeline origin counts exactly', same,
+        'exposure_check.csv')
+    for _, r in ex.iterrows():
+        add('4.7', f"{r['dataset']} H={r['H']} exposure % at W=60",
+            r['exposure_pct'], 'exposure_check.csv')
+mx = load('mixture_table.csv')
+if mx is not None:
+    for _, r in mx[mx.f > 0].iterrows():
+        add('4.8 / Table 9',
+            f"{r['dataset']} {r['model']} H={r['H']} f / rho_p / rho_m / C-D",
+            f"{r['f']:.3f} / {r['rho_p']:.3f} / {r['rho_m']:.3f} / "
+            f"{r['measured_bias_C_minus_D']:+.2f}", 'mixture_table.csv')
+wd = load('window_depth_sensitivity.csv')
+if wd is not None:
+    wd = wd.assign(f=1 - wd['n_test_honest'] / wd['n_test_naive'])
+    for _, r in wd.iterrows():
+        add('4.9 / Table 10',
+            f"W={int(r['W'])} H={int(r['horizon'])} skill A / C / bias [CI] / f%",
+            f"{r['skill_honest']:+.2f} / {r['skill_naive']:+.2f} / "
+            f"{r['bias_total']:+.2f} [{r['bias_ci_low']:+.2f}, "
+            f"{r['bias_ci_high']:+.2f}] / {100 * r['f']:.1f}",
+            'window_depth_sensitivity.csv')
+    rho, p = stats.spearmanr(wd['f'], wd['bias_total'])
+    add('4.9', 'Spearman correlation of bias with exposure (9 cases)',
+        f"{rho:.2f} (p={p:.3f})", 'window_depth_sensitivity.csv')
+im = load('injection_mixture_table.csv')
+if im is not None:
+    add('4.10', 'ridge runs with displaced rows', len(im),
+        'injection_mixture_table.csv')
+    cuts = [0, .1, .2, .3, .4, .5, .6, .7, .8, 1.0]
+    med = im.groupby(pd.cut(im['f'], cuts), observed=True)['bias'].median()
+    for k, v in med.items():
+        add('4.10', f'median bias, exposure {k}', v, 'injection_mixture_table.csv')
+    for c, g2 in im.groupby('condition'):
+        add('4.10', f'{c} median f / f_design / rho_p / rho_m / bias',
+            ' / '.join(f"{g2[col].median():.3f}"
+                       for col in ('f', 'f_design', 'rho_p', 'rho_m', 'bias')),
+            'injection_mixture_table.csv')
+    add('4.10', 'Spearman correlation of f_design with f',
+        f"{stats.spearmanr(im['f_design'], im['f'])[0]:.2f}",
+        'injection_mixture_table.csv')
+
 out = pd.DataFrame(rows)
 out.to_csv(OUT, index=False)
 w = max(len(k) for k in out['key']) if len(out) else 10
