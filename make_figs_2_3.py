@@ -10,7 +10,6 @@ GREEN = '#2e9e78'      # rows retained by the gap-aware protocol
 BLUE = '#2f6fb5'       # rows retained by the naive protocol
 GREY = '#c3c7cc'       # rows discarded after a gap
 ORANGE = '#e2622a'     # naive arm in Fig. S2
-DPI = 200
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(HERE, 'artifact_aligned.csv')
@@ -114,7 +113,7 @@ def figure2(path=os.path.join(HERE, 'fig1_configurations.png')):
     ax.set_ylim(-1.15, 4.6)
     ax.axis('off')
     fig.tight_layout()
-    fig.savefig(path, dpi=DPI, bbox_inches='tight', facecolor='white')
+    fig.savefig(path.replace('.png', '.pdf'), bbox_inches='tight', facecolor='white')
     plt.close(fig)
     print('wrote', path)
 
@@ -159,7 +158,7 @@ def figure3(path=os.path.join(HERE, 'fig_s2_skill.png'), csv=CSV):
                  'both scored on the same calendar window',
                  fontsize=10, fontweight='bold', y=1.04)
     fig.tight_layout()
-    fig.savefig(path, dpi=DPI, bbox_inches='tight', facecolor='white')
+    fig.savefig(path.replace('.png', '.pdf'), bbox_inches='tight', facecolor='white')
     plt.close(fig)
     print('wrote', path)
 

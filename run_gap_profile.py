@@ -59,9 +59,9 @@ OUT_PROFILE_CSV = os.path.join(HERE, 'gap_profile_summary.csv')
 OUT_TABLE7_CSV = os.path.join(HERE, 'gap_profile_table7.csv')
 OUT_CTX_CSV = os.path.join(HERE, 'gap_context_summary.csv')
 OUT_NUMBERS_CSV = os.path.join(HERE, 'gap_profile_numbers.csv')
-OUT_FIG = os.path.join(HERE, 'gap_profile_fig.png')
-OUT_FIG_PAPER = os.path.join(HERE, 'gap_profile_fig_paper.png')
-OUT_FIG_CTX = os.path.join(HERE, 'gap_context_fig.png')
+OUT_FIG = os.path.join(HERE, 'gap_profile_fig.pdf')
+OUT_FIG_PAPER = os.path.join(HERE, 'gap_profile_fig_paper.pdf')
+OUT_FIG_CTX = os.path.join(HERE, 'gap_context_fig.pdf')
 DECOMP_CSV = os.path.join(HERE, 'artifact_decomposition.csv')
 # composition channel (XGBoost) quoted in the paper, used only as fallback
 PAPER_COMPOSITION_D3 = {1: 1.21, 3: 2.96, 6: 4.16}
@@ -633,7 +633,7 @@ def main():
                  'displaced); grey numbers are rows per point.',
                  fontsize=11, fontweight='bold')
     fig.tight_layout(rect=[0, 0.05, 1, 0.93])
-    fig.savefig(OUT_FIG, dpi=150, bbox_inches='tight')
+    fig.savefig(OUT_FIG, bbox_inches='tight')
     plt.close(fig)
     print(f'\nSaved {OUT_FIG}')
 
@@ -658,7 +658,7 @@ def main():
                  'the far-from-gap level; grey numbers are rows per point.',
                  fontsize=10, fontweight='bold')
     fig.tight_layout(rect=[0, 0.05, 1, 0.94])
-    fig.savefig(OUT_FIG_PAPER, dpi=200, bbox_inches='tight')
+    fig.savefig(OUT_FIG_PAPER, bbox_inches='tight')
     plt.close(fig)
     print(f'Saved {OUT_FIG_PAPER}')
 
@@ -687,7 +687,7 @@ def main():
         ax.legend(fontsize=8, frameon=False)
         ax.grid(alpha=0.3, axis='y')
         fig2.tight_layout()
-        fig2.savefig(OUT_FIG_CTX, dpi=150, bbox_inches='tight')
+        fig2.savefig(OUT_FIG_CTX, bbox_inches='tight')
         plt.close(fig2)
         print(f'Saved {OUT_FIG_CTX}')
 

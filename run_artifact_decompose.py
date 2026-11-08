@@ -19,7 +19,7 @@ from run_artifact_aligned import (XGB, gap_aware_split, naive_aligned_split,
 MODELS = ('XGBoost', 'Ridge')
 OUT_CSV = os.path.join(HERE, 'artifact_decomposition.csv')
 SHARES_CSV = os.path.join(HERE, 'artifact_channel_shares.csv')
-FIG_S3 = os.path.join(HERE, 'fig_s3_decomposition.png')
+FIG_S3 = os.path.join(HERE, 'fig_s3_decomposition.pdf')
 
 
 def make_model(name):
@@ -188,7 +188,7 @@ def figure_s3(df, path=FIG_S3):
     np.atleast_1d(axes)[0].set_ylabel('bias (percentage points of skill)')
     np.atleast_1d(axes)[0].legend(fontsize=8, frameon=False, loc='best')
     fig.tight_layout()
-    fig.savefig(path, dpi=200, bbox_inches='tight', facecolor='white')
+    fig.savefig(path, bbox_inches='tight', facecolor='white')
     plt.close(fig)
     print('wrote', path)
 

@@ -5,7 +5,7 @@ Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wi
 This repository reproduces every table, figure, and reported number in the manuscript, plus the
 released output it refers to, starting from the raw public data.
 
-## Setup
+## Setups
 
 Requires **Python 3.12** (the pinned xgboost 3.3 needs >= 3.12, TensorFlow 2.17 has no 3.13
 wheels). The paper's numbers were produced on Windows; other platforms and library versions
