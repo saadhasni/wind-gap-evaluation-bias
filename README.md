@@ -67,7 +67,8 @@ Table and section numbers refer to the current manuscript.
 | 14 | `injection_mixture_check.py` | exposure and error-inflation table for the injected runs (`injection_mixture_table.csv`, from step 10), **Fig. 7** (`Figure_7.pdf`) | seconds |
 | 15 | `regen_fig1_v2.py`, `regen_fig2_v2.py`, `regen_fig3_v2.py` | **Figs. 1, 2 and 3** as vector PDFs (`Figure_1.pdf`, `Figure_2.pdf`, `Figure_3.pdf`); Fig. 2 from `gap_profile_summary.csv`, Fig. 3 from `gap_injection_v3_results.csv`, Fig. 1 needs no data | seconds |
 | 16 | `run_window_depth.py` | **Table 10** (`window_depth_sensitivity.csv`), **Fig. 6** (`Figure_window_depth.pdf`) | hours |
-| 17 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs (run last) | seconds |
+| 17 | `run_clark_west.py` | Clark-West p-values for the A and C arms of Table 3 (`clark_west.csv`; refits the XGBoost models of step 4, Sect. 3.5) | minutes |
+| 18 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs (run last) | seconds |
 
 `make_figs_2_3.py` is the earlier figure script (it produced the PNG versions of Fig. 1 and
 the supplementary skill figure) and is kept for the audit trail.
@@ -120,6 +121,7 @@ informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m
 |-- mixture_check.py               # Table 9, Fig. 5
 |-- injection_mixture_check.py     # injected-run exposure table, Fig. 7
 |-- run_window_depth.py            # Table 10, Fig. 6 (long-running)
+|-- run_clark_west.py              # Clark-West p-values (Sect. 3.5)
 |-- regen_fig1_v2.py, regen_fig2_v2.py, regen_fig3_v2.py   # Figs. 1-3 (vector PDF)
 |-- make_figs_2_3.py               # earlier figure script (audit trail)
 |-- make_paper_numbers.py          # numbers quoted in the text

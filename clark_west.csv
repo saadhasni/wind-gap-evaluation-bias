@@ -1,0 +1,10 @@
+dataset,horizon,cw_stat_honest,cw_p_honest,cw_stat_naive,cw_p_naive,n_test_honest,n_test_naive
+D1 ZephIR (contiguous),1,14.965,6.18e-51,14.965,6.18e-51,2084,2084
+D1 ZephIR (contiguous),10,7.227,2.47e-13,7.227,2.47e-13,2073,2073
+D1 ZephIR (contiguous),30,3.163,0.00078,3.163,0.00078,2048,2048
+D2 WFIP3 Buoy (few long gaps),1,4.561,2.55e-06,3.793,7.45e-05,5124,5124
+D2 WFIP3 Buoy (few long gaps),3,3.72,9.97e-05,3.565,0.000182,5113,5113
+D2 WFIP3 Buoy (few long gaps),6,3.083,0.00103,3.368,0.000379,5096,5096
+D3 Onshore (many short gaps),1,8.703,1.61e-18,7.959,8.64e-16,3394,7574
+D3 Onshore (many short gaps),3,8.068,3.56e-16,10.055,4.37e-24,3287,7545
+D3 Onshore (many short gaps),6,6.961,1.69e-12,11.457,1.08e-30,3133,7077

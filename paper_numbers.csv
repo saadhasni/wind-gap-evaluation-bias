@@ -410,3 +410,13 @@ V-A,"claimed reduction (m/s), kW, % rated","0.095, 24, 1.2",derived
 4.10,MANY-SHORT median f / f_design / rho_p / rho_m / bias,0.694 / 1.000 / 1.013 / 0.966 / 2.128,injection_mixture_table.csv
 4.10,MEDIUM median f / f_design / rho_p / rho_m / bias,0.338 / 0.380 / 1.055 / 1.037 / 0.244,injection_mixture_table.csv
 4.10,Spearman correlation of f_design with f,0.90,injection_mixture_table.csv
+3.5,"Clark-West p-value, maximum over the 18 cases",0.001,clark_west.csv
+3.5,"D1 ZephIR (contiguous) H=1 CW stat / p, gap-aware | naive",14.96 / 6.18e-51 | 14.96 / 6.18e-51,clark_west.csv
+3.5,"D1 ZephIR (contiguous) H=10 CW stat / p, gap-aware | naive",7.23 / 2.47e-13 | 7.23 / 2.47e-13,clark_west.csv
+3.5,"D1 ZephIR (contiguous) H=30 CW stat / p, gap-aware | naive",3.16 / 0.00078 | 3.16 / 0.00078,clark_west.csv
+3.5,"D2 WFIP3 Buoy (few long gaps) H=1 CW stat / p, gap-aware | naive",4.56 / 2.55e-06 | 3.79 / 7.45e-05,clark_west.csv
+3.5,"D2 WFIP3 Buoy (few long gaps) H=3 CW stat / p, gap-aware | naive",3.72 / 9.97e-05 | 3.56 / 0.000182,clark_west.csv
+3.5,"D2 WFIP3 Buoy (few long gaps) H=6 CW stat / p, gap-aware | naive",3.08 / 0.00103 | 3.37 / 0.000379,clark_west.csv
+3.5,"D3 Onshore (many short gaps) H=1 CW stat / p, gap-aware | naive",8.70 / 1.61e-18 | 7.96 / 8.64e-16,clark_west.csv
+3.5,"D3 Onshore (many short gaps) H=3 CW stat / p, gap-aware | naive",8.07 / 3.56e-16 | 10.05 / 4.37e-24,clark_west.csv
+3.5,"D3 Onshore (many short gaps) H=6 CW stat / p, gap-aware | naive",6.96 / 1.69e-12 | 11.46 / 1.08e-30,clark_west.csv

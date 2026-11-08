@@ -267,6 +267,16 @@ if im is not None:
         f"{stats.spearmanr(im['f_design'], im['f'])[0]:.2f}",
         'injection_mixture_table.csv')
 
+# Sect. 3.5: Clark-West tests for the A and C arms of Table 3
+cw = load('clark_west.csv')
+if cw is not None:
+    add('3.5', 'Clark-West p-value, maximum over the 18 cases',
+        float(cw[['cw_p_honest', 'cw_p_naive']].max().max()), 'clark_west.csv')
+    for _, r in cw.iterrows():
+        add('3.5', f"{r['dataset']} H={r['horizon']} CW stat / p, gap-aware | naive",
+            f"{r['cw_stat_honest']:.2f} / {r['cw_p_honest']:.3g} | "
+            f"{r['cw_stat_naive']:.2f} / {r['cw_p_naive']:.3g}", 'clark_west.csv')
+
 out = pd.DataFrame(rows)
 out.to_csv(OUT, index=False)
 w = max(len(k) for k in out['key']) if len(out) else 10
