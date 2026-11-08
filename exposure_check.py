@@ -1,20 +1,3 @@
-"""Exposure arithmetic: how many forecast origins does a gap-aware protocol
-keep, as a function of the window depth W and the horizon H?
-
-Equation used (no model is fitted):
-
-    N_valid(W, H) = sum_k max(0, L_k - W - H)         (L_k = segment lengths)
-    R(W, H)       = N_valid / (N - W - H)             (retention)
-    f(W, H)       = 1 - R                              (exposure)
-
-Run from the folder that holds the data and the pipeline files:
-
-    python exposure_check.py
-
-It prints a table that compares the formula with the pipeline's own count of
-valid origins at W = 60 (they should agree exactly), writes exposure_check.csv,
-and draws Figure_exposure.pdf / .png.
-"""
 import os
 import sys
 
@@ -90,7 +73,7 @@ def draw(lengths_by_ds, path_stem):
         a.tick_params(labelsize=7, length=2)
         a.grid(alpha=0.3, lw=0.5)
         a.spines[['top', 'right']].set_visible(False)
-    axes[0].legend(fontsize=7, frameon=False, loc='lower left', bbox_to_anchor=(0.0, 0.0))
+    axes[0].legend(fontsize=7, frameon=False, loc='center right')
     fig.tight_layout()
     fig.savefig(path_stem + '.pdf', bbox_inches='tight')
     fig.savefig(path_stem + '.png', dpi=300, bbox_inches='tight')

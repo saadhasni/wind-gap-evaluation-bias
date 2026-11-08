@@ -38,46 +38,42 @@ def analyse(dec, ali):
 
 
 def draw(t, stem):
+    """Figure 5: error inflation on displaced rows and the resulting composition
+    bias, D3 only (D1 and D2 have exposure 0 in the aligned window)."""
     t = t[(t.f > 1e-9) & t.rho_p.notna()].copy()
-    t['label'] = t.model + ' H=' + t.H.astype(str)
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.7))
-    ax = axes[0]
-    x = np.arange(len(t))
-    w = 0.38
-    ax.bar(x - w / 2, t.rho_p, w, color='#D85A30', label='persistence')
-    ax.bar(x + w / 2, t.rho_m, w, color='#1D9E75', label='model')
-    ax.axhline(1, color='k', lw=0.8)
-    ax.set_ylim(0, max(t.rho_p.max(), t.rho_m.max()) * 1.3)
-    ax.set_xticks(x)
-    ax.set_xticklabels(t.label, rotation=60, ha='right', fontsize=6.5)
-    ax.set_ylabel('Error ratio, displaced / valid rows', fontsize=7.5)
-    ax.set_title('(a) Error inflation', fontsize=8, fontweight='bold', pad=3)
-    ax.legend(fontsize=6.5, frameon=False)
-    ax = axes[1]
-    ax.bar(x, 100 * t.f, 0.6, color='0.55')
-    ax.set_xticks(x)
-    ax.set_xticklabels(t.label, rotation=60, ha='right', fontsize=6.5)
-    ax.set_ylabel('Displaced share f of scored rows (%)', fontsize=7.5)
-    ax.set_title('(b) Exposure', fontsize=8, fontweight='bold', pad=3)
-    ax = axes[2]
-    ax.scatter(t.measured_bias_C_minus_D, t.formula_exact, s=18, c='#4A7BB7',
-               label='exact formula', zorder=3)
-    ax.scatter(t.measured_bias_C_minus_D, t.formula_first_order, s=18,
-               marker='x', c='#D85A30', label='first order', zorder=3)
-    allv = pd.concat([t.measured_bias_C_minus_D, t.formula_exact,
-                      t.formula_first_order])
-    lim = [min(0, allv.min()) - 0.3, max(allv.max(), 0.5) + 0.3]
-    ax.plot(lim, lim, color='k', lw=0.8)
-    ax.set_xlim(lim)
-    ax.set_ylim(lim)
-    ax.set_xlabel('Measured C - D (points)', fontsize=7.5)
-    ax.set_ylabel('Formula (points)', fontsize=7.5)
-    ax.set_title('(c) Formula vs measured', fontsize=8, fontweight='bold', pad=3)
-    ax.legend(fontsize=6.5, frameon=False)
-    for a in axes:
-        a.tick_params(labelsize=6.5, length=2)
-        a.grid(alpha=0.3, lw=0.5)
-        a.spines[['top', 'right']].set_visible(False)
+    ORG, GRN = '#D85A30', '#1D9E75'
+    H = sorted(t.H.unique())
+    fig, ax = plt.subplots(1, 2, figsize=(7.0, 2.7))
+    a = ax[0]
+    g = t[t.model == 'XGBoost'].sort_values('H')
+    a.plot(H, g.rho_p, 'o-', color=ORG, ms=4.5, lw=1.3, label='persistence')
+    for mod, fill in (('XGBoost', GRN), ('Ridge', 'white')):
+        g = t[t.model == mod].sort_values('H')
+        a.plot(H, g.rho_m, marker='s', ms=4.5, lw=1.3, color=GRN, mfc=fill, label=mod)
+    a.axhline(1, color='k', lw=0.8)
+    a.set_xticks(H)
+    a.set_xlabel('Horizon H (samples)', fontsize=8)
+    a.set_ylabel('Error ratio, displaced / valid rows', fontsize=8)
+    a.set_ylim(0.95, 1.4)
+    a.set_title('(a) Error inflation', fontsize=8.5, fontweight='bold', pad=3)
+    a.legend(fontsize=7, frameon=False, loc='upper right')
+    b = ax[1]
+    w = 0.36
+    x = np.arange(len(H))
+    for i, (mod, hat) in enumerate((('XGBoost', None), ('Ridge', '//'))):
+        g = t[t.model == mod].sort_values('H')
+        b.bar(x + (i - 0.5) * w, g.measured_bias_C_minus_D, w, color=GRN, hatch=hat,
+              edgecolor='white', label=mod, alpha=1 if hat is None else 0.65)
+    b.set_xticks(x)
+    b.set_xticklabels([f'H = {h}' for h in H], fontsize=7)
+    b.axhline(0, color='k', lw=0.8)
+    b.set_ylabel('Composition bias, C - D (points)', fontsize=8)
+    b.set_title('(b) Resulting composition bias', fontsize=8.5, fontweight='bold', pad=3)
+    b.legend(fontsize=7, frameon=False, loc='upper left')
+    for A in ax:
+        A.tick_params(labelsize=7, length=2)
+        A.grid(alpha=0.3, lw=0.5)
+        A.spines[['top', 'right']].set_visible(False)
     fig.tight_layout()
     fig.savefig(stem + '.pdf', bbox_inches='tight')
     fig.savefig(stem + '.png', dpi=300, bbox_inches='tight')
@@ -94,6 +90,6 @@ if __name__ == '__main__':
     if len(live):
         err = (live.formula_exact - live.measured_bias_C_minus_D).abs().max()
         print(f'\nLargest |exact formula - measured|: {err:.3f} points '
-              '(it should be near the CSV rounding, about 0.01-0.05)')
-    draw(t, os.path.join(HERE, 'Figure_mixture'))
-    print('Saved mixture_table.csv and Figure_mixture.pdf / .png')
+              '(an identity check of the implementation; it should be near CSV rounding)')
+    draw(t, os.path.join(HERE, 'Figure_5'))
+    print('Saved mixture_table.csv and Figure_5.pdf / .png')

@@ -37,41 +37,64 @@ def analyse(df):
 
 
 def draw(d, stem):
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.8))
-    ax = axes[0]
-    for c, g in d.groupby('condition'):
-        ax.scatter(g.bias, g.bias_hat, s=7, alpha=0.6, color=COLOURS[c],
-                   label=c.capitalize(), edgecolor='none')
-    lim = [min(d.bias.min(), d.bias_hat.min()), max(d.bias.max(), d.bias_hat.max())]
-    ax.plot(lim, lim, color='k', lw=0.8)
-    ax.set_xlabel('Measured bias (points)', fontsize=7.5)
-    ax.set_ylabel('Mixture formula (points)', fontsize=7.5)
-    ax.set_title('(a) Formula vs measured', fontsize=8, fontweight='bold', pad=3)
-    ax.legend(fontsize=6.5, frameon=False, markerscale=1.5)
-    ax = axes[1]
-    for c, g in d.groupby('condition'):
-        ax.scatter(100 * g.f, g.bias, s=7, alpha=0.6, color=COLOURS[c],
-                   edgecolor='none')
-    ax.set_xlabel('Exposure f (% of scored rows displaced)', fontsize=7.5)
-    ax.set_ylabel('Measured bias (points)', fontsize=7.5)
-    ax.set_title('(b) Bias vs exposure', fontsize=8, fontweight='bold', pad=3)
-    ax = axes[2]
-    for c, g in d.groupby('condition'):
-        ax.scatter(g.f_design, g.f, s=7, alpha=0.6, color=COLOURS[c],
-                   edgecolor='none')
-    ax.plot([0, 1], [0, 1], color='k', lw=0.8)
-    ax.set_xlabel('Design exposure p(W+H)/((1-p)g)', fontsize=7.5)
-    ax.set_ylabel('Measured exposure f', fontsize=7.5)
-    ax.set_title('(c) Exposure from gap design', fontsize=8, fontweight='bold',
-                 pad=3)
-    for a in axes:
-        a.tick_params(labelsize=6.5, length=2)
-        a.grid(alpha=0.3, lw=0.5)
-        a.spines[['top', 'right']].set_visible(False)
+    """Figure 7: (a) bias by exposure bin, (b) measured vs design exposure,
+    (c) median error inflation by gap structure."""
+    from scipy.stats import spearmanr
+    ORG, GRN, BLU = '#D85A30', '#1D9E75', '#4A7BB7'
+    fig, ax = plt.subplots(1, 3, figsize=(7.2, 2.7))
+    bins = [0, .1, .2, .3, .4, .5, .6, .7, .8, 1.0]
+    d = d.copy()
+    d['fbin'] = pd.cut(d.f, bins)
+    g = d.groupby('fbin', observed=True).bias.agg(
+        ['count', 'median', lambda s: s.quantile(.25), lambda s: s.quantile(.75)])
+    g.columns = ['n', 'med', 'q1', 'q3']
+    mid = [(a + b) / 2 * 100 for a, b in zip(bins[:-1], bins[1:])]
+    a = ax[0]
+    a.errorbar(mid, g.med, yerr=[g.med - g.q1, g.q3 - g.med], fmt='o-', color='k',
+               ms=3.5, lw=1.1, capsize=2)
+    a.axhline(0, color='k', lw=0.8)
+    a.set_xlabel('Exposure f (%, bin centre)', fontsize=8)
+    a.set_ylabel('Bias (points), median and IQR', fontsize=8)
+    a.set_title('(a) Bias vs exposure', fontsize=8.5, fontweight='bold', pad=3)
+    a.set_ylim(-1.5, 10.5)
+    b = ax[1]
+    for c, col in (('MANY-SHORT', GRN), ('MEDIUM', BLU), ('FEW-LONG', ORG)):
+        s = d[d.condition == c]
+        b.scatter(s.f_design, s.f, s=5, alpha=0.35, color=col, edgecolor='none',
+                  label=c.capitalize())
+    b.plot([0, 1], [0, 1], color='k', lw=0.8)
+    b.text(0.03, 0.93, f'Spearman {spearmanr(d.f_design, d.f)[0]:.2f}', fontsize=7,
+           transform=b.transAxes)
+    b.set_xlabel('Design exposure, Eq. (6)', fontsize=8)
+    b.set_ylabel('Measured exposure f', fontsize=8)
+    b.set_title('(b) Exposure from gap design', fontsize=8.5, fontweight='bold', pad=3)
+    b.legend(fontsize=6.5, frameon=False, loc='lower right', markerscale=2)
+    c = ax[2]
+    conds = ['FEW-LONG', 'MEDIUM', 'MANY-SHORT']
+    med = d.groupby('condition')[['rho_p', 'rho_m']].median().loc[conds]
+    x = np.arange(3)
+    c.plot(x, med.rho_p, 'o', color=ORG, ms=6, label='persistence')
+    c.plot(x, med.rho_m, 's', color=GRN, ms=6, label='ridge')
+    for i in range(3):
+        c.plot([i, i], [med.rho_m.iloc[i], med.rho_p.iloc[i]], color='0.5', lw=1)
+    c.axhline(1, color='k', lw=0.8)
+    c.set_xticks(x)
+    c.set_xticklabels(['Few-long', 'Medium', 'Many-short'], fontsize=7)
+    c.set_ylabel('Median error ratio, displaced / valid', fontsize=8)
+    c.set_title('(c) Error inflation', fontsize=8.5, fontweight='bold', pad=3)
+    c.legend(fontsize=7, frameon=False, loc='upper right')
+    c.set_xlim(-0.5, 2.5)
+    c.set_ylim(0.93, 1.27)
+    for A in ax:
+        A.tick_params(labelsize=7, length=2)
+        A.grid(alpha=0.3, lw=0.5)
+        A.spines[['top', 'right']].set_visible(False)
     fig.tight_layout()
     fig.savefig(stem + '.pdf', bbox_inches='tight')
     fig.savefig(stem + '.png', dpi=300, bbox_inches='tight')
     plt.close(fig)
+    print('\nBias by exposure bin:')
+    print(g.round(2).to_string())
 
 
 if __name__ == '__main__':
@@ -93,5 +116,5 @@ if __name__ == '__main__':
     ratio = (d.f / d.f_design).groupby(d.condition).median().round(2)
     print('Median measured / design exposure by structure:')
     print(ratio.to_string())
-    draw(d, os.path.join(HERE, 'Figure_injection_mechanism'))
-    print('Saved injection_mixture_table.csv and Figure_injection_mechanism.pdf / .png')
+    draw(d, os.path.join(HERE, 'Figure_7'))
+    print('Saved injection_mixture_table.csv and Figure_7.pdf / .png')
