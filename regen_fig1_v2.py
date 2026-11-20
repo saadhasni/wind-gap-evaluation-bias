@@ -88,9 +88,9 @@ def main(stem=os.path.join(HERE, 'Figure_1')):
             ha='left', fontsize=F_HEAD)
 
     ax.text(-1.9, -0.55, 'B \u2212 A  =  feature contamination', fontsize=F_EQ)
-    ax.text(3.7, -0.55, 'D \u2212 B  =  training contamination', fontsize=F_EQ)
-    ax.text(9.5, -0.55, 'C \u2212 D  =  evaluation composition', fontsize=F_EQ)
-    ax.text(-1.9, -0.95, 'C \u2212 A  =  total bias', fontsize=F_EQ,
+    ax.text(3.7, -0.55, 'D \u2212 B  =  training-set effect', fontsize=F_EQ)
+    ax.text(9.5, -0.55, 'C \u2212 D  =  scoring bias (composition)', fontsize=F_EQ)
+    ax.text(-1.9, -0.95, 'C \u2212 A  =  total protocol difference', fontsize=F_EQ,
             fontweight='bold')
 
     handles = [mpatches.Patch(facecolor=GREEN, label='gap-valid rows retained'),
