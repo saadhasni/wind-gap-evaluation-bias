@@ -177,7 +177,7 @@ def main():
     recs = list(df.record.unique())
     n_slot = len(recs) * len(hors) * N_REPLICATES
 
-    say(f"Injection summary for {os.path.abspath(path)}")
+    say(f"Injection summary for {os.path.basename(path)}")
     say(f"  {len(df)} runs; records {recs}; fractions {fracs}; horizons "
         f"{hors}; models {sorted(df.model.unique())}")
     have = {m: {c: sorted(df[(df.model == m) & (df.condition == c)]
