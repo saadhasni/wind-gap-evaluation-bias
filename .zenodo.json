@@ -1,5 +1,5 @@
 {
-  "title": "wind-gap-evaluation-bias: code for 'Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting'",
+  "title": "wind-gap-evaluation-bias: code for 'Evaluation bias from data gaps in short-term wind speed forecasting: scoring versus training effects'",
   "upload_type": "software",
   "license": "MIT",
   "creators": [

@@ -1,7 +1,9 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite the paper below."
-title: "wind-gap-evaluation-bias: code for 'Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting'"
+message: "If you use this code, please cite it as below."
+title: "wind-gap-evaluation-bias: code for 'Evaluation bias from data gaps in short-term wind speed forecasting: scoring versus training effects'"
 type: software
+doi: "10.5281/zenodo.22734490"
+repository-code: "https://github.com/saadhasni/wind-gap-evaluation-bias"
 license: MIT
 authors:
   - family-names: Hasni
