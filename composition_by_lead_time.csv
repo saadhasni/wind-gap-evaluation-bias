@@ -1,0 +1,7 @@
+dataset,horizon,model,n_valid,n_input_only,n_target_crossing,rho_p_input_only,rho_m_input_only,rho_p_target_crossing,rho_m_target_crossing,skill_D,skill_E,skill_C,comp_total,comp_input_only,comp_target_crossing
+D3 Onshore (many short gaps),1,XGBoost,3394,4034,146,1.1858,1.1607,2.9846,3.0069,3.9692,5.2376,4.9864,1.0171,1.2684,-0.2513
+D3 Onshore (many short gaps),1,Ridge,3394,4034,146,1.1858,1.1699,2.9846,2.9448,1.79,2.6147,2.6756,0.8856,0.8247,0.0609
+D3 Onshore (many short gaps),3,XGBoost,3287,3854,404,1.1767,1.1191,2.1485,1.9962,2.531,5.4542,6.1509,3.6198,2.9231,0.6967
+D3 Onshore (many short gaps),3,Ridge,3287,3854,404,1.1767,1.1324,2.1485,2.0465,2.8402,5.0893,5.5055,2.6653,2.2491,0.4162
+D3 Onshore (many short gaps),6,XGBoost,3133,3272,672,1.1981,1.1175,1.6452,1.5413,4.3829,8.1889,8.6046,4.2217,3.806,0.4157
+D3 Onshore (many short gaps),6,Ridge,3133,3272,672,1.1981,1.1225,1.6452,1.5726,4.893,8.4451,8.5662,3.6732,3.5521,0.1211

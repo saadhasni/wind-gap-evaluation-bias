@@ -1,0 +1,19 @@
+dataset,horizon,model,skill_A,skill_B,skill_D,skill_C,bias_feature,bias_training,bias_composition,bias_total,n_test_ABD,n_test_C,n_train_AB,n_train_CD,row_expansion,W
+D3 Onshore (many short gaps),1,XGBoost,3.61,3.63,3.75,4.55,0.02,0.12,0.79,0.93,6963,8858,21000,30284,1.27,15
+D3 Onshore (many short gaps),1,Ridge,1.98,1.99,2.02,2.68,0.01,0.03,0.65,0.69,6963,8858,21000,30284,1.27,15
+D3 Onshore (many short gaps),3,XGBoost,2.83,2.94,3.62,5.87,0.11,0.68,2.26,3.05,6730,8802,20305,30336,1.31,15
+D3 Onshore (many short gaps),3,Ridge,3.86,3.91,3.84,5.71,0.05,-0.07,1.88,1.85,6730,8802,20305,30336,1.31,15
+D3 Onshore (many short gaps),6,XGBoost,4.84,5.13,6.43,9.7,0.3,1.29,3.27,4.86,6400,8729,19323,30403,1.36,15
+D3 Onshore (many short gaps),6,Ridge,6.34,6.41,6.15,9.0,0.07,-0.26,2.85,2.66,6400,8729,19323,30403,1.36,15
+D3 Onshore (many short gaps),1,XGBoost,2.96,3.07,3.81,4.73,0.12,0.73,0.93,1.78,5457,8500,16479,30627,1.56,30
+D3 Onshore (many short gaps),1,Ridge,1.96,1.96,1.86,2.64,0.0,-0.1,0.78,0.68,5457,8500,16479,30627,1.56,30
+D3 Onshore (many short gaps),3,XGBoost,3.32,3.22,3.5,6.31,-0.11,0.28,2.81,2.99,5286,8431,15974,30659,1.59,30
+D3 Onshore (many short gaps),3,Ridge,3.77,3.77,3.49,5.62,0.0,-0.28,2.13,1.85,5286,8431,15974,30659,1.59,30
+D3 Onshore (many short gaps),6,XGBoost,4.57,4.38,4.96,9.34,-0.19,0.58,4.38,4.77,5039,8379,15240,30738,1.66,30
+D3 Onshore (many short gaps),6,Ridge,5.74,5.74,5.32,8.76,0.0,-0.42,3.44,3.02,5039,8379,15240,30738,1.66,30
+D3 Onshore (many short gaps),1,XGBoost,1.17,1.17,3.97,4.99,0.0,2.8,1.02,3.81,3394,7574,10291,31523,2.23,60
+D3 Onshore (many short gaps),1,Ridge,1.98,1.98,1.79,2.68,-0.0,-0.19,0.89,0.7,3394,7574,10291,31523,2.23,60
+D3 Onshore (many short gaps),3,XGBoost,-0.53,-0.53,2.53,6.15,0.0,3.06,3.62,6.68,3287,7545,9975,31548,2.3,60
+D3 Onshore (many short gaps),3,Ridge,2.89,2.89,2.84,5.51,0.0,-0.05,2.67,2.61,3287,7545,9975,31548,2.3,60
+D3 Onshore (many short gaps),6,XGBoost,0.0,-0.19,4.38,8.6,-0.19,4.57,4.22,8.6,3133,7077,9524,31580,2.26,60
+D3 Onshore (many short gaps),6,Ridge,5.12,5.12,4.89,8.57,0.0,-0.23,3.67,3.44,3133,7077,9524,31580,2.26,60
