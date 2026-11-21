@@ -108,6 +108,10 @@ def main():
     print('\nFormula reproduces the pipeline counts exactly:', bad.empty)
     if not bad.empty:
         print(bad.to_string(index=False))
+    ew = pd.DataFrame([dict(dataset=k, W=W, H=H, exposure_pct=round(100 * (1 - retention(L, W, H)), 2))
+                       for k, L in lengths_by_ds.items() for W in (6, 12, 36, 60, 144) for H in (1, 6)])
+    ew.to_csv(os.path.join(HERE, 'exposure_by_window.csv'), index=False)
+    print('Saved exposure_by_window.csv (Eq. 1 exposure for other window depths)')
     draw(lengths_by_ds, os.path.join(HERE, 'Figure_exposure'))
     print('Saved Figure_exposure.pdf and .png')
 
