@@ -9,9 +9,12 @@
 Each step is a separate process, so a failure stops the run at that step and
 names it. Step numbers match the README table.
 """
+import os
 import subprocess
 import sys
 import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 # (step, script, long_running)
 STEPS = [
@@ -24,6 +27,7 @@ STEPS = [
     (7, 'run_model_generalisation_aligned.py', True),
     (8, 'run_rolling_origin_aligned.py', False),
     (9, 'run_gap_profile.py', False),
+    (9, 'run_interpolation_sensitivity.py', False),   # README row '-'
     (10, 'run_gap_injection.py', True),
     (11, 'make_injection_summary.py', False),
     (12, 'exposure_check.py', False),
@@ -34,8 +38,9 @@ STEPS = [
     (15, 'regen_fig3_v2.py', False),
     (16, 'run_window_depth.py', True),
     (17, 'run_clark_west.py', False),
-    (19, 'run_robustness.py', False),
-    (18, 'make_paper_numbers.py', False),   # always last
+    (18, 'run_channel_robustness.py', False),
+    (19, 'run_robustness.py', True),
+    (20, 'make_paper_numbers.py', False),   # always last
 ]
 
 
@@ -52,7 +57,8 @@ def main(argv):
             continue
         print(f"\n[run ] step {n}: {script}", flush=True)
         t0 = time.time()
-        if subprocess.run([sys.executable, script]).returncode != 0:
+        if subprocess.run([sys.executable, os.path.join(HERE, script)],
+                          cwd=HERE).returncode != 0:
             print(f"FAILED at step {n} ({script}); fix and resume with "
                   f"--from {n}")
             return 1

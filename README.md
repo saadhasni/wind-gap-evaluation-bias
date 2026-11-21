@@ -69,7 +69,33 @@ Table and section numbers refer to the current manuscript.
 | 16 | `run_window_depth.py` | **Table 10** (`window_depth_sensitivity.csv`), **Fig. 6** (`Figure_window_depth.pdf`) | hours |
 | 17 | `run_clark_west.py` | Clark-West p-values for the A and C arms of Table 3 (`clark_west.csv`; refits the XGBoost models of step 4, Sect. 3.5) | minutes |
 | 18 | `run_channel_robustness.py` | D3 only: the composition channel split into displaced rows whose target crosses a gap and rows where only the input window does (`composition_by_lead_time.csv`), and the Table 4 decomposition repeated at W = 15, 30 and 60 (`window_depth_channels.csv`) | ~10 min |
-| 19 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs (run last) | seconds |
+| 19 | `run_robustness.py` | the Table 3 bias refit with ten XGBoost seeds, a nine-setting hyperparameter grid, and settings tuned on a validation block at the end of the gap-aware training set and applied to both arms (`robustness_seeds.csv`, `robustness_grid.csv`, `robustness_summary.csv`) | long (about 460 XGBoost refits) |
+| 20 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs (run last) | seconds |
+
+### One command, tests and checksums
+
+`run_all.py` runs the steps above in order, each as a separate process, and stops at the
+first failure:
+
+```bash
+python run_all.py --list     # show the steps
+python run_all.py --quick    # skip the long steps (1, 7, 10, 16, 19); uses existing CSVs
+python run_all.py --from 9   # resume at step 9
+```
+
+Settings shared by every script (seed, train fraction, XGBoost hyperparameters) live in
+`config.py`, so changing one there changes it in every table.
+
+The unit tests use synthetic data only and need no downloads:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests -q
+```
+
+`data/CHECKSUMS.sha256` lists the SHA-256 of every raw file used. From the repository root,
+`sha256sum -c data/CHECKSUMS.sha256` confirms you have the same files (on Windows, run it in
+Git Bash; on macOS use `shasum -a 256 -c`).
 
 `make_figs_2_3.py` is the earlier figure script (it produced the PNG versions of Fig. 1 and
 the supplementary skill figure) and is kept for the audit trail.
@@ -103,6 +129,8 @@ informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m
 ## Repository layout
 
 ```
+|-- config.py                      # seed, train fraction, XGBoost settings shared by all scripts
+|-- run_all.py                     # runs the whole pipeline in order
 |-- final_pipeline.py              # feature engineering, segmentation, causal self-check
 |-- dataset_adapters.py            # D1/D2 loaders
 |-- knmi_adapter.py                # KNMI record loader
@@ -124,6 +152,8 @@ informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m
 |-- run_window_depth.py            # Table 10, Fig. 6 (long-running)
 |-- run_clark_west.py              # Clark-West p-values (Sect. 3.5)
 |-- run_channel_robustness.py      # lead-time split of composition; channels vs window depth
+|-- run_robustness.py              # Table 3 bias across seeds, a grid and tuned settings
+|-- tests/                         # unit tests on synthetic data (pytest)
 |-- regen_fig1_v2.py, regen_fig2_v2.py, regen_fig3_v2.py   # Figs. 1-3 (vector PDF)
 |-- make_figs_2_3.py               # earlier figure script (audit trail)
 |-- make_paper_numbers.py          # numbers quoted in the text
@@ -133,6 +163,8 @@ informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m
 |-- Figure_*.pdf                   # figures of the paper (Figs. 1-7, vector)
 |-- *.png                          # earlier figure renderings
 |-- data/README.md                 # data sources, files and licences
+|-- data/CHECKSUMS.sha256          # SHA-256 of every raw data file
+|-- CITATION.cff                   # citation metadata
 |-- LICENSE                        # MIT (code)
 `-- archive/                       # superseded scripts and logs, not part of the reproduction path
 ```
