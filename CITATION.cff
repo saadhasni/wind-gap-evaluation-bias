@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "wind-gap-evaluation-bias: code for 'Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting'"
+type: software
+license: MIT
+authors:
+  - family-names: Hasni
+    given-names: Muhammad Saad
+    affiliation: University of Engineering and Technology Taxila
+    orcid: "https://orcid.org/0009-0009-1520-531X"
+  - family-names: Khalid
+    given-names: Alishba
+    affiliation: University of Engineering and Technology Taxila
+    orcid: "https://orcid.org/0009-0006-9757-0799"
+  - family-names: Ayoob
+    given-names: Hamail
+    affiliation: University of Engineering and Technology Taxila
+    orcid: "https://orcid.org/0009-0005-4885-1001"
+  - family-names: Arslan
+    given-names: Abdullah Ahmad
+    affiliation: COMSATS University Islamabad, Lahore Campus
+  - family-names: Khalid
+    given-names: Mamoona
+    affiliation: University of Engineering and Technology Taxila
+    orcid: "https://orcid.org/0000-0002-5966-9951"

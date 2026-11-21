@@ -20,8 +20,7 @@ import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
 # config 
-TRAIN_RATIO = 0.75
-SEED        = 42
+from config import TRAIN_RATIO, SEED, xgb_params
 RUN_LSTM    = True     # set False for a fast run without the neural network
 LSTM_EPOCHS = 20
 MIN_TEST    = 200
@@ -33,10 +32,7 @@ MODELS_FAST = {
     'RandomForest': lambda: RandomForestRegressor(
                         n_estimators=200, max_depth=12, n_jobs=-1,
                         random_state=SEED),
-    'XGBoost':      lambda: XGBRegressor(
-                        n_estimators=300, max_depth=6, learning_rate=0.05,
-                        subsample=0.8, colsample_bytree=0.8,
-                        random_state=SEED, verbosity=0),
+    'XGBoost':      lambda: XGBRegressor(**xgb_params()),
 }
 
 

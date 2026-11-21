@@ -42,9 +42,8 @@ TEST_SPAN = 0.25              # test window length as a fraction of record
 MIN_TRAIN_HONEST = 350
 MIN_TEST_HONEST = 120
 
-XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
-           colsample_bytree=0.8, random_state=42, verbosity=0,
-           n_jobs=int(os.environ.get('INJECTION_NJOBS', 4)))  # threads only
+from config import xgb_params
+XGB = xgb_params(n_jobs=int(os.environ.get('INJECTION_NJOBS', 4)))  # threads only
 RIDGE_ALPHA = 1.0
 MODELS = ('XGBoost', 'Ridge')
 

@@ -1,0 +1,10 @@
+dataset,horizon,bias_base,seed_mean,seed_sd,seed_min,seed_max,seeds_same_sign,grid_min,grid_max,tuned_bias,tuned_skill_honest,tuned_skill_naive,tuned_params
+D1 ZephIR (contiguous),1,0.0,0.0,0.0,0.0,0.0,True,0.0,0.0,0.0,6.1,6.1,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D1 ZephIR (contiguous),10,0.0,0.0,0.0,0.0,0.0,True,0.0,0.0,0.0,1.11,1.11,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D1 ZephIR (contiguous),30,0.0,0.0,0.0,0.0,0.0,True,0.0,0.0,0.0,-4.71,-4.71,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D2 WFIP3 Buoy (few long gaps),1,-6.24,-4.61,1.18,-6.52,-2.2,True,-8.43,-0.06,-0.06,-0.61,-0.67,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D2 WFIP3 Buoy (few long gaps),3,-7.86,-7.54,1.48,-9.98,-5.81,True,-11.58,0.18,-0.25,0.46,0.21,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D2 WFIP3 Buoy (few long gaps),6,-4.05,-2.16,0.92,-3.85,-1.0,True,-4.95,0.13,0.13,1.08,1.21,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D3 Onshore (many short gaps),1,3.81,3.11,0.3,2.66,3.49,True,1.4,4.58,1.64,2.85,4.49,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.1}"
+D3 Onshore (many short gaps),3,6.68,6.58,0.58,5.78,7.62,True,3.39,7.56,3.39,3.53,6.92,"{'max_depth': 3, 'n_estimators': 150, 'learning_rate': 0.05}"
+D3 Onshore (many short gaps),6,8.6,9.2,0.41,8.43,9.92,True,4.96,9.32,7.45,2.18,9.63,"{'max_depth': 6, 'n_estimators': 150, 'learning_rate': 0.05}"
