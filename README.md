@@ -1,16 +1,16 @@
-# Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting
+# Evaluation bias from data gaps in short-term wind speed forecasting: scoring versus training effects
 
-Code and pipeline for the paper "Evaluation Bias From Data Gaps in Short-Term Wind Speed Forecasting" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
+Code and pipeline for the paper "Evaluation bias from data gaps in short-term wind speed forecasting: scoring versus training effects" (M. S. Hasni, A. Khalid, H. Ayoob, A. A. Arslan, M. Khalid).
 
-This repository reproduces every table, figure, and reported number in the manuscript, plus the
-released output it refers to, starting from the raw public data.
+This repository reproduces every table, figure, and reported number in the manuscript and its
+supplementary material, plus the released output they refer to, starting from the raw public data.
 
 ## Setup
 
 Requires **Python 3.12** (the pinned xgboost 3.3 needs >= 3.12, TensorFlow 2.17 has no 3.13
 wheels). The paper's numbers were produced on Windows; other platforms and library versions
 can change individual gradient-boosting values by up to about 2.6 percentage points, while the
-structural findings are unchanged (see Sect. 4.11 of the paper).
+structural findings are unchanged (see Sect. 4.6 and Supplementary Section S11 of the paper).
 
 ```bash
 python -m venv venv
@@ -46,31 +46,44 @@ See `data/README.md` for exact files, dates, folders and licences.
 Run in this order. Steps 2 through 9 take an afternoon; step 10 (the injection experiment)
 takes about 2 hours on the author's Windows machine, and step 16 (the window-depth sweep)
 takes about three times as long as step 4. Both should be left running unattended.
-Table and section numbers refer to the current manuscript.
+Table, figure and section numbers refer to the current manuscript; numbers starting with S refer
+to its supplementary material.
 
 | # | Script | Produces | Runtime |
 |---|---|---|---|
 | 1 | `knmi_auto.py` | raw KNMI downloads into `knmi_*/` folders | ~1 hr/platform |
 | 2 | `make_data_section.py` | Table 1, seven-day excerpt (`fig_data_overview.png`) | minutes |
 | 3 | `make_knmi_table.py` | KNMI record statistics (`knmi_record_statistics.csv`) | minutes |
-| 4 | `run_artifact_aligned.py` | **Table 3** (main result), block-bootstrap sensitivity | minutes |
-| 5 | `run_artifact_decompose.py` | **Table 4** (channel decomposition), decomposition figure (`fig_s3_decomposition.png`) | minutes |
-| 6 | `run_artifact_audit.py` | Sect. 3.4 (calendar-alignment audit) | minutes |
-| 7 | `run_model_generalisation_aligned.py` | **Table 5**, LSTM results on D2/D3 (`model_generalisation_aligned.csv`) | ~20 min (LSTM is slow) |
-| 8 | `run_rolling_origin_aligned.py` | **Table 6** | ~15 min |
-| 9 | `run_gap_profile.py` | **Table 7**, data for Fig. 2 (`gap_profile_summary.csv`), pre-gap variability test (`gap_context_fig.png`) | ~30 min |
-| - | `run_interpolation_sensitivity.py` | interpolation-policy sensitivity (Sect. 2.1) | minutes |
+| 4 | `run_artifact_aligned.py` | **Table 3**, columns A, C and C − A with its interval (main result); block-bootstrap sensitivity | minutes |
+| 5 | `run_artifact_decompose.py` | **Table 3**, columns D, D − B and C − D (training-set effect and scoring bias), for gradient boosting and ridge (`artifact_decomposition.csv`); decomposition figure (`fig_s3_decomposition.pdf`) | minutes |
+| 6 | `run_artifact_audit.py` | calendar-alignment audit (Supplementary Section S2) | minutes |
+| 7 | `run_model_generalisation_aligned.py` | **Table S1** and the model-family results of Sect. 4.1, including the LSTM (`model_generalisation_aligned.csv`) | ~20 min (LSTM is slow) |
+| 8 | `run_rolling_origin_aligned.py` | **Table S2** and the rolling-origin results of Sect. 4.1 | ~15 min |
+| 9 | `run_gap_profile.py` | **Table S3**, data for **Fig. 3** (`gap_profile_summary.csv`), pre-gap variability test (`gap_context_fig.pdf`) | ~30 min |
+| - | `run_interpolation_sensitivity.py` | interpolation-policy sensitivity (Sect. 2, Supplementary Section S2) | minutes |
 | 10 | `run_gap_injection.py` | injection results (`gap_injection_v3_results.csv`) | ~2 hours |
-| 11 | `make_injection_summary.py` | **Table 8** (from the injection CSV) | seconds |
-| 12 | `exposure_check.py` | checks Eq. (1) against the pipeline's valid-origin counts (`exposure_check.csv`), **Fig. 4** (`Figure_exposure.pdf`) | seconds |
-| 13 | `mixture_check.py` | **Table 9** (`mixture_table.csv`, from steps 4 and 5), **Fig. 5** (`Figure_5.pdf`) | seconds |
-| 14 | `injection_mixture_check.py` | exposure and error-inflation table for the injected runs (`injection_mixture_table.csv`, from step 10), **Fig. 7** (`Figure_7.pdf`) | seconds |
-| 15 | `regen_fig1_v2.py`, `regen_fig2_v2.py`, `regen_fig3_v2.py` | **Figs. 1, 2 and 3** as vector PDFs (`Figure_1.pdf`, `Figure_2.pdf`, `Figure_3.pdf`); Fig. 2 from `gap_profile_summary.csv`, Fig. 3 from `gap_injection_v3_results.csv`, Fig. 1 needs no data | seconds |
-| 16 | `run_window_depth.py` | **Table 10** (`window_depth_sensitivity.csv`), **Fig. 6** (`Figure_window_depth.pdf`) | hours |
-| 17 | `run_clark_west.py` | Clark-West p-values for the A and C arms of Table 3 (`clark_west.csv`; refits the XGBoost models of step 4, Sect. 3.5) | minutes |
-| 18 | `run_channel_robustness.py` | D3 only: the composition channel split into displaced rows whose target crosses a gap and rows where only the input window does (`composition_by_lead_time.csv`), and the Table 4 decomposition repeated at W = 15, 30 and 60 (`window_depth_channels.csv`) | ~10 min |
-| 19 | `run_robustness.py` | the Table 3 bias refit with ten XGBoost seeds, a nine-setting hyperparameter grid, and settings tuned on a validation block at the end of the gap-aware training set and applied to both arms (`robustness_seeds.csv`, `robustness_grid.csv`, `robustness_summary.csv`) | long (about 460 XGBoost refits) |
-| 20 | `make_paper_numbers.py` | `paper_numbers.csv`: every number quoted in the text, collected from the CSVs (run last) | seconds |
+| 11 | `make_injection_summary.py` | **Table 5** and Supplementary Section S5 (from the injection CSV) | seconds |
+| 12 | `exposure_check.py` | checks Eq. (1) against the pipeline's valid-origin counts (`exposure_check.csv`), **Fig. S1** (`Figure_exposure.pdf`) | seconds |
+| 13 | `mixture_check.py` | **Table 4**, columns *f*, *ρ* and C − D (`mixture_table.csv`, from steps 4 and 5), **Fig. 2** (`Figure_5.pdf`) | seconds |
+| 14 | `injection_mixture_check.py` | exposure and error inflation in the injected runs (`injection_mixture_table.csv`, from step 10), **Fig. 5** (`Figure_7.pdf`) | seconds |
+| 15 | `regen_fig1_v2.py`, `regen_fig2_v2.py`, `regen_fig3_v2.py` | **Figs. 1, 3 and 4** as vector PDFs (`Figure_1.pdf`, `Figure_2.pdf`, `Figure_3.pdf`); Fig. 3 from `gap_profile_summary.csv`, Fig. 4 from `gap_injection_v3_results.csv`, Fig. 1 needs no data | seconds |
+| 16 | `run_window_depth.py` | **Table S5** and Sect. 4.5 (`window_depth_sensitivity.csv`), **Fig. S2** (`Figure_window_depth.pdf`) | hours |
+| 17 | `run_clark_west.py` | **Table S4**: Clark-West p-values for the A and C arms of Table 3 (`clark_west.csv`; refits the XGBoost models of step 4, Sect. 3.5) | minutes |
+| 18 | `run_channel_robustness.py` | D3 only: the scoring bias split into displaced rows whose target crosses a gap and rows where only the input window does (`composition_by_lead_time.csv`; last column of **Table 4**, **Table S7**), and the Table 3 decomposition repeated at W = 15, 30 and 60 (`window_depth_channels.csv`; Sect. 4.5, **Table S6**) | ~10 min |
+| 19 | `run_robustness.py` | **Table S8** and Sect. 4.1: the Table 3 difference refit with ten XGBoost seeds, a nine-setting hyperparameter grid, and settings tuned on a validation block at the end of the gap-aware training set and applied to both arms (`robustness_seeds.csv`, `robustness_grid.csv`, `robustness_summary.csv`) | long (about 460 XGBoost refits) |
+| 20 | `make_paper_numbers.py` | `paper_numbers.csv`: numbers quoted in the text, collected from the CSVs (run last) | seconds |
+
+The figure files keep their original names, which no longer follow the figure numbers:
+
+| File | Figure in the paper |
+|---|---|
+| `Figure_1.pdf` | Fig. 1 (the four configurations) |
+| `Figure_5.pdf` | Fig. 2 (error inflation and scoring bias) |
+| `Figure_2.pdf` | Fig. 3 (error by distance from a gap) |
+| `Figure_3.pdf` | Fig. 4 (controlled gap injection) |
+| `Figure_7.pdf` | Fig. 5 (exposure and bias in the injected runs) |
+| `Figure_exposure.pdf` | Fig. S1 (origins kept by the gap-aware protocol) |
+| `Figure_window_depth.pdf` | Fig. S2 (protocol difference against window depth) |
 
 ### One command, tests and checksums
 
@@ -123,7 +136,7 @@ check that its W = 60 run reproduces the Table 3 bias.
 
 **A note on steps 13 and 14.** The "exact formula" column of `mixture_table.csv` and the
 `bias_hat` column of `injection_mixture_table.csv` reproduce the measured bias by construction
-(Eq. 4 is an accounting identity, see Sect. 3.7). They check the implementation; the
+(Eq. 3 is an accounting identity, see Sect. 3.4). They check the implementation; the
 informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m`.
 
 ## Repository layout
@@ -137,30 +150,30 @@ informative columns are the exposure `f` and the error ratios `rho_p` and `rho_m
 |-- knmi_auto.py                   # KNMI bulk downloader (needs KNMI_API_KEY)
 |-- make_data_section.py           # Table 1, seven-day excerpt
 |-- make_knmi_table.py             # KNMI record statistics
-|-- run_artifact_aligned.py        # Table 3 (corrected block bootstrap lives here)
-|-- run_artifact_decompose.py      # Table 4, decomposition figure
-|-- run_artifact_audit.py          # Sect. 3.4
-|-- run_model_generalisation_aligned.py   # Table 5, LSTM results
-|-- run_rolling_origin_aligned.py  # Table 6
-|-- run_gap_profile.py             # Table 7, data for Fig. 2, pre-gap test
+|-- run_artifact_aligned.py        # Table 3, main result (corrected block bootstrap lives here)
+|-- run_artifact_decompose.py      # Table 3 decomposition columns, decomposition figure
+|-- run_artifact_audit.py          # calendar-alignment audit (Section S2)
+|-- run_model_generalisation_aligned.py   # Table S1, LSTM results
+|-- run_rolling_origin_aligned.py  # Table S2
+|-- run_gap_profile.py             # Table S3, data for Fig. 3, pre-gap test
 |-- run_interpolation_sensitivity.py  # interpolation-policy sensitivity
 |-- run_gap_injection.py           # injection runs (long-running)
-|-- make_injection_summary.py      # Table 8
-|-- exposure_check.py              # Eq. (1) check, Fig. 4
-|-- mixture_check.py               # Table 9, Fig. 5
-|-- injection_mixture_check.py     # injected-run exposure table, Fig. 7
-|-- run_window_depth.py            # Table 10, Fig. 6 (long-running)
-|-- run_clark_west.py              # Clark-West p-values (Sect. 3.5)
-|-- run_channel_robustness.py      # lead-time split of composition; channels vs window depth
-|-- run_robustness.py              # Table 3 bias across seeds, a grid and tuned settings
+|-- make_injection_summary.py      # Table 5
+|-- exposure_check.py              # Eq. (1) check, Fig. S1
+|-- mixture_check.py               # Table 4, Fig. 2
+|-- injection_mixture_check.py     # injected-run exposure table, Fig. 5
+|-- run_window_depth.py            # Table S5, Fig. S2 (long-running)
+|-- run_clark_west.py              # Table S4, Clark-West p-values
+|-- run_channel_robustness.py      # Tables S6 and S7, last column of Table 4
+|-- run_robustness.py              # Table S8: Table 3 difference across seeds, a grid and tuned settings
 |-- tests/                         # unit tests on synthetic data (pytest)
-|-- regen_fig1_v2.py, regen_fig2_v2.py, regen_fig3_v2.py   # Figs. 1-3 (vector PDF)
+|-- regen_fig1_v2.py, regen_fig2_v2.py, regen_fig3_v2.py   # Figs. 1, 3 and 4 (vector PDF)
 |-- make_figs_2_3.py               # earlier figure script (audit trail)
 |-- make_paper_numbers.py          # numbers quoted in the text
 |-- *.csv                          # result files, one per script above
-|-- paper_numbers.csv              # every number quoted in the text, from this run
-|-- injection_summary_report.txt   # full report behind Table 8
-|-- Figure_*.pdf                   # figures of the paper (Figs. 1-7, vector)
+|-- paper_numbers.csv              # numbers quoted in the text, from this run
+|-- injection_summary_report.txt   # full report behind Table 5
+|-- Figure_*.pdf                   # figures of the paper (vector; see the file-to-figure table)
 |-- *.png                          # earlier figure renderings
 |-- data/README.md                 # data sources, files and licences
 |-- data/CHECKSUMS.sha256          # SHA-256 of every raw data file
