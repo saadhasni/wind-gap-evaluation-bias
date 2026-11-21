@@ -42,8 +42,8 @@ MODEL = 'Ridge'               # 'Ridge' or 'XGBoost'; Ridge is far stabler
 # --legacy-context to use the original computation instead (both are printed).
 LEGACY_CONTEXT = '--legacy-context' in sys.argv
 
-XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
-           colsample_bytree=0.8, random_state=42, verbosity=0, n_jobs=4)
+from config import xgb_params
+XGB = xgb_params(n_jobs=4)
 
 # KNMI platform folders with REAL gaps (full records, not clean blocks)
 KNMI_FOLDERS = [('BSB', 'knmi_bsb'), ('HKN', 'knmi_hkn'),

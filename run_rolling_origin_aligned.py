@@ -16,8 +16,8 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
-XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
-           colsample_bytree=0.8, random_state=42, verbosity=0)
+from config import xgb_params
+XGB = xgb_params()
 
 N_ORIGINS   = 6      # number of expanding origins
 FIRST_TRAIN = 0.50   # first origin trains on this fraction

@@ -13,21 +13,23 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 from xgboost import XGBRegressor
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, GRU, Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
+
+
+def _tf():
+    """Import TensorFlow on first use only (it is slow to import and only the
+    LSTM/GRU code needs it), and return the module."""
+    import tensorflow as tf
+    tf.get_logger().setLevel('ERROR')
+    return tf
 
 # CONFIG 
-SEED          = 42
-TRAIN_RATIO   = 0.75
+from config import SEED, TRAIN_RATIO, xgb_params
 ARIMA_ORIGINS = 120          # strided ARIMA refit origins per horizon
 RNN_EPOCHS    = 30
 BOOT_N        = 500          # bootstrap resamples for RMSE CIs
 BOOT_BLOCK    = 50           
 RUN_DEEP      = True         
-np.random.seed(SEED); tf.random.set_seed(SEED)
+np.random.seed(SEED)
 
 MODEL_NAMES = ['Persistence', 'ARIMA', 'XGBoost', 'LSTM', 'GRU']
 
@@ -201,6 +203,7 @@ def set_determinism(seed=SEED):
     """Seed Python, NumPy and TensorFlow and make TF ops deterministic, so two
     fits on identical data give identical predictions."""
     import random
+    tf = _tf()
     random.seed(seed); np.random.seed(seed)
     tf.keras.utils.set_random_seed(seed)
     try:
@@ -226,6 +229,9 @@ def load_onshore(here):
 
 
 def build_rnn(cell, seq_len):
+    _tf()
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Dropout
     m = Sequential([
         cell(32, return_sequences=True, input_shape=(seq_len, 1)),
         Dropout(0.2), cell(16), Dropout(0.2),
@@ -308,15 +314,16 @@ def run_dataset(name, series, step, horizons, seq_len, all_rows_out):
             res['_pers_on_arima_origins'] = rmse_mae(tt, pers_sub)[0]
 
         # XGBoost
-        xgb = XGBRegressor(n_estimators=300, max_depth=6, learning_rate=0.05,
-                           subsample=0.8, colsample_bytree=0.8,
-                           random_state=SEED, verbosity=0)
+        xgb = XGBRegressor(**xgb_params())
         xgb.fit(Xtr, ytr); xp = xgb.predict(Xte)
         r, m = rmse_mae(yte, xp)
         res['XGBoost'] = (r, m); errs['XGBoost'] = yte - xp
 
         # LSTM / GRU  (G6: scaler fit strictly pre-test)
         if RUN_DEEP:
+            tf = _tf()
+            from tensorflow.keras.layers import LSTM, GRU
+            from tensorflow.keras.callbacks import EarlyStopping
             scaler = MinMaxScaler()
             scaler.fit(series.values[:te_rows[0]].reshape(-1, 1))
             ys_s = scaler.transform(series.values.reshape(-1, 1)).flatten()

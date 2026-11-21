@@ -11,12 +11,10 @@ sys.path.insert(0, HERE)
 import final_pipeline as FP
 from dataset_adapters import load_zephir, load_wfip3_buoy
 
-XGB = dict(n_estimators=300, max_depth=6, learning_rate=0.05, subsample=0.8,
-           colsample_bytree=0.8, random_state=42, verbosity=0)
-TRAIN_RATIO = 0.75
+from config import SEED, TRAIN_RATIO, xgb_params
+XGB = xgb_params()
 N_BOOT = 2000
 BLOCK = 50
-SEED = 42
 OUT_CSV = os.path.join(HERE, 'artifact_aligned.csv')
 
 
@@ -80,7 +78,7 @@ def _segment_blocks(idx, seg_series, block):
 
 
 def bias_ci(eh_m, eh_p, idx_h, en_m, en_p, idx_n, seg_series,
-            n_boot=2000, block=50, seed=42, min_frac=0.5):
+            n_boot=2000, block=50, seed=SEED, min_frac=0.5):
     """Block-bootstrap 95% CI for (naive skill - gap-aware skill).
     Resamples, with replacement, non-overlapping blocks of up to `block`
     scored rows cut at segment boundaries (see _segment_blocks), with one
